@@ -2,15 +2,16 @@
 
 ## Table of Contents
 1. [Overview](#overview)
-2. [File Structure](#file-structure)
-3. [Design System](#design-system)
-4. [Page-by-Page Breakdown](#page-by-page-breakdown)
-5. [JavaScript Functions Reference](#javascript-functions-reference)
-6. [Testing Frontend Pages](#testing-frontend-pages)
-7. [Customization Guide](#customization-guide)
-8. [Integration with Backend](#integration-with-backend)
-9. [Troubleshooting](#troubleshooting)
-10. [Best Practices](#best-practices)
+2. [Quick Start](#quick-start) ⭐ **Start here for file locations**
+3. [File Structure](#file-structure)
+4. [Design System](#design-system)
+5. [Page-by-Page Breakdown](#page-by-page-breakdown)
+6. [JavaScript Functions Reference](#javascript-functions-reference)
+7. [Testing Frontend Pages](#testing-frontend-pages)
+8. [Customization Guide](#customization-guide)
+9. [Integration with Backend](#integration-with-backend)
+10. [Troubleshooting](#troubleshooting)
+11. [Best Practices](#best-practices)
 
 ---
 
@@ -48,21 +49,146 @@ Phase 2 implements the complete frontend user interface for Finding Sweetie usin
 
 ---
 
+## Quick Start
+
+**If you just want to know where files go:**
+
+```bash
+# All frontend files go in the public/ directory
+/home/user/claude_sweets/public/index.html          ← Home page
+/home/user/claude_sweets/public/login.html          ← Login page
+/home/user/claude_sweets/public/register.html       ← Registration
+/home/user/claude_sweets/public/lost-pet.html       ← Lost pets
+/home/user/claude_sweets/public/found-pet.html      ← Found pets
+/home/user/claude_sweets/public/dashboard.html      ← Dashboard
+/home/user/claude_sweets/public/about.html          ← About page
+/home/user/claude_sweets/public/js/app.js           ← JavaScript (create js/ dir first)
+```
+
+**To create the structure:**
+
+```bash
+# Navigate to project root
+cd /home/user/claude_sweets
+
+# Create JavaScript directory
+mkdir -p public/js
+
+# Files are already created if you're reading this after Phase 2
+# If recreating from scratch, use the code examples in sections below
+```
+
+**To verify everything is in place:**
+
+```bash
+ls -la public/         # Should see all .html files
+ls -la public/js/      # Should see app.js
+```
+
+---
+
 ## File Structure
 
+### Project Root Directory
+All frontend files go in the `public/` directory at the project root:
+
 ```
-public/
-├── index.html              # Home/landing page
-├── login.html              # Login page
-├── register.html           # Registration page
-├── lost-pet.html           # Lost pets listing
-├── found-pet.html          # Found pets listing
-├── dashboard.html          # User dashboard
-├── about.html              # About page
-├── js/
-│   └── app.js              # Main application JavaScript
-├── css/                    # (Future) Custom CSS
-└── icons/                  # (Phase 4) PWA icons
+claude_sweets/                           ← Your project root
+├── database/
+├── middleware/
+├── routes/
+├── public/                              ← ALL FRONTEND FILES GO HERE
+│   ├── index.html                       ← /home/user/claude_sweets/public/index.html
+│   ├── login.html                       ← /home/user/claude_sweets/public/login.html
+│   ├── register.html                    ← /home/user/claude_sweets/public/register.html
+│   ├── lost-pet.html                    ← /home/user/claude_sweets/public/lost-pet.html
+│   ├── found-pet.html                   ← /home/user/claude_sweets/public/found-pet.html
+│   ├── dashboard.html                   ← /home/user/claude_sweets/public/dashboard.html
+│   ├── about.html                       ← /home/user/claude_sweets/public/about.html
+│   ├── js/                              ← Create this directory
+│   │   └── app.js                       ← /home/user/claude_sweets/public/js/app.js
+│   ├── css/                             ← (Future) Custom CSS
+│   └── icons/                           ← (Phase 4) PWA icons
+├── uploads/
+├── server.js
+├── package.json
+└── ...
+```
+
+### Step-by-Step File Creation
+
+**The `public/` directory should already exist from Phase 1.**
+
+#### Step 1: Create the JavaScript directory
+```bash
+# From project root
+cd /home/user/claude_sweets
+mkdir -p public/js
+```
+
+#### Step 2: Create all HTML files in public/
+```bash
+# All HTML files go directly in public/
+cd /home/user/claude_sweets/public
+
+# Create each file (content provided in sections below)
+touch index.html
+touch login.html
+touch register.html
+touch lost-pet.html
+touch found-pet.html
+touch dashboard.html
+touch about.html
+```
+
+#### Step 3: Create the JavaScript file
+```bash
+# Create app.js in the js/ subdirectory
+cd /home/user/claude_sweets/public/js
+touch app.js
+```
+
+### File Paths Summary
+
+When creating files, use these **exact paths**:
+
+| File | Full Path |
+|------|-----------|
+| Home page | `/home/user/claude_sweets/public/index.html` |
+| Login page | `/home/user/claude_sweets/public/login.html` |
+| Registration | `/home/user/claude_sweets/public/register.html` |
+| Lost pets | `/home/user/claude_sweets/public/lost-pet.html` |
+| Found pets | `/home/user/claude_sweets/public/found-pet.html` |
+| Dashboard | `/home/user/claude_sweets/public/dashboard.html` |
+| About page | `/home/user/claude_sweets/public/about.html` |
+| Main JavaScript | `/home/user/claude_sweets/public/js/app.js` |
+
+### Why These Locations?
+
+- **`public/`** is served as static files by Express (configured in `server.js`)
+- **HTML files** go at the root of `public/` so they're accessible as `/page.html`
+- **`public/js/`** stores JavaScript files, accessible as `/js/app.js`
+- **`public/css/`** will store CSS files (future), accessible as `/css/style.css`
+- **`public/icons/`** will store PWA icons (Phase 4), accessible as `/icons/icon-192x192.png`
+
+### Verify Directory Structure
+
+After creating directories, verify with:
+```bash
+cd /home/user/claude_sweets
+tree public/ -L 2
+
+# Should show:
+# public/
+# ├── index.html
+# ├── login.html
+# ├── register.html
+# ├── lost-pet.html
+# ├── found-pet.html
+# ├── dashboard.html
+# ├── about.html
+# └── js/
+#     └── app.js
 ```
 
 ---
