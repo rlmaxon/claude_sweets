@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finding Sweetie - Reuniting Lost Pets with Their Families</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐾</text></svg>">
+
+    <style>
+        /* Custom gradient background */
+        .gradient-bg {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%);
+        }
+
+        /* Calming card hover effect */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.04);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white/80 backdrop-blur-md shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition">
+                        <span class="text-3xl">🐾</span>
+                        <span class="text-xl font-bold">Finding Sweetie</span>
+                    </a>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition">Home</a>
+                    <a href="/lost-pet.html" class="text-gray-700 hover:text-blue-600 font-medium transition">Lost Pets</a>
+                    <a href="/found-pet.html" class="text-gray-700 hover:text-blue-600 font-medium transition">Found Pets</a>
+                    <a href="/about.html" class="text-gray-700 hover:text-blue-600 font-medium transition">About</a>
+
+                    <!-- User Section (dynamic) -->
+                    <div id="nav-auth">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-btn" class="text-gray-700 hover:text-blue-600 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="/" class="block px-3 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">Home</a>
+                <a href="/lost-pet.html" class="block px-3 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">Lost Pets</a>
+                <a href="/found-pet.html" class="block px-3 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">Found Pets</a>
+                <a href="/about.html" class="block px-3 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">About</a>
+                <div id="mobile-nav-auth" class="px-3 py-2">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+        <div class="text-center">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+                Reuniting Lost Pets with Their Families
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                A community-driven platform to help lost pets find their way home and connect found pets with their loving owners.
+            </p>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="/lost-pet.html" class="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 shadow-lg hover:shadow-xl transition transform hover:scale-105">
+                    View Lost Pets
+                </a>
+                <a href="/register.html" class="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold border-2 border-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl transition transform hover:scale-105">
+                    Create Account
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Cards -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
+            How Finding Sweetie Helps
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Feature 1: Report Lost Pets -->
+            <div class="bg-white rounded-xl shadow-lg p-8 card-hover">
+                <div class="text-5xl mb-4">🐕</div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Report Lost Pets</h3>
+                <p class="text-gray-600 mb-6">
+                    Create a listing with your pet's photo, description, and last seen location. Our community will help you search.
+                </p>
+                <a href="/register.html" class="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center">
+                    Get Started →
+                </a>
+            </div>
+
+            <!-- Feature 2: Report Found Pets -->
+            <div class="bg-white rounded-xl shadow-lg p-8 card-hover">
+                <div class="text-5xl mb-4">📍</div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Report Found Pets</h3>
+                <p class="text-gray-600 mb-6">
+                    Found a pet? Upload their details and we'll help match them with their owner through our database.
+                </p>
+                <a href="/register.html" class="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center">
+                    Report Now →
+                </a>
+            </div>
+
+            <!-- Feature 3: Community Support -->
+            <div class="bg-white rounded-xl shadow-lg p-8 card-hover">
+                <div class="text-5xl mb-4">📱</div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Connect & Notify</h3>
+                <p class="text-gray-600 mb-6">
+                    Receive notifications when pets matching your search are found. Connect directly with pet owners.
+                </p>
+                <a href="/about.html" class="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center">
+                    Learn More →
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="bg-white rounded-xl shadow-lg p-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
+                Making a Difference
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div>
+                    <div class="text-4xl md:text-5xl font-bold text-blue-600 mb-2" id="pets-registered">0</div>
+                    <div class="text-gray-600 font-medium">Pets Registered</div>
+                </div>
+                <div>
+                    <div class="text-4xl md:text-5xl font-bold text-green-600 mb-2">Community</div>
+                    <div class="text-gray-600 font-medium">Driven Platform</div>
+                </div>
+                <div>
+                    <div class="text-4xl md:text-5xl font-bold text-purple-600 mb-2">Free</div>
+                    <div class="text-gray-600 font-medium">Always Free to Use</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-2xl p-12 text-center text-white">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">
+                Ready to Help Reunite Pets?
+            </h2>
+            <p class="text-xl mb-8 opacity-90">
+                Join our community today and make a difference in a pet's life.
+            </p>
+            <a href="/register.html" class="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 shadow-lg hover:shadow-xl transition transform hover:scale-105 inline-block">
+                Create Free Account
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p class="text-gray-300">© 2025 Finding Sweetie. All rights reserved.</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="/" class="text-gray-300 hover:text-white transition">Home</a>
+                    <a href="/about.html" class="text-gray-300 hover:text-white transition">About</a>
+                    <a href="/lost-pet.html" class="text-gray-300 hover:text-white transition">Lost Pets</a>
+                    <a href="/found-pet.html" class="text-gray-300 hover:text-white transition">Found Pets</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="/js/app.js"></script>
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+
+        // Load session and update nav
+        checkSession();
+
+        // Load pet count
+        loadPetCount();
+
+        async function loadPetCount() {
+            try {
+                const [lostRes, foundRes] = await Promise.all([
+                    fetch('/api/pets/lost?limit=1000'),
+                    fetch('/api/pets/found?limit=1000')
+                ]);
+                const lost = await lostRes.json();
+                const found = await foundRes.json();
+                const total = (lost.count || 0) + (found.count || 0);
+
+                // Animate counter
+                animateCounter('pets-registered', total);
+            } catch (error) {
+                console.error('Error loading pet count:', error);
+            }
+        }
+
+        function animateCounter(id, target) {
+            const element = document.getElementById(id);
+            let current = 0;
+            const increment = Math.ceil(target / 50);
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = current;
+            }, 30);
+        }
+    </script>
+</body>
+</html>
