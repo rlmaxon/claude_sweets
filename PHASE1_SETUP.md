@@ -207,20 +207,62 @@ curl -s http://localhost:3000/api/health | jq
 
 ### 2. Database Verification
 
+**Important**: The database file (`findingsweetie.db`) is created automatically when you first start the server with `npm start` or `node server.js`. If the database file doesn't exist yet, start the server first, then run the verification.
+
+#### Option 1: Using Node.js Verification Script (Recommended)
+
+```bash
+# Run the comprehensive database verification script
+node verify_database.js
+
+# This script will check:
+# - Database file exists
+# - All tables are present (users, pets)
+# - All columns are correctly defined
+# - Indexes are created
+# - Foreign keys are configured
+# - Record counts
+```
+
+#### Option 2: Manual Verification
+
 ```bash
 # Check if database file was created
 ls -lh database/
 
-# You should see:
-# findingsweetie.db (the main database)
-# findingsweetie.db-shm (shared memory file)
-# findingsweetie.db-wal (write-ahead log)
+# You should see at minimum:
+# - findingsweetie.db (the main database file - REQUIRED)
+#
+# You MAY also see (these are OPTIONAL and ephemeral):
+# - findingsweetie.db-shm (shared memory file)
+# - findingsweetie.db-wal (write-ahead log)
+#
+# Note: .shm and .wal files are temporary SQLite files that only exist
+# during active database operations. It's completely normal if they're
+# not present. They are created when:
+# - The database is actively being used
+# - There are uncommitted transactions
+# - WAL mode is enabled and there are pending writes
+```
 
+#### Option 3: Using sqlite3 CLI (Optional)
+
+If you have sqlite3 installed, you can verify the schema:
+
+```bash
 # Check database schema
 sqlite3 database/findingsweetie.db ".schema"
 
 # Should show users and pets table definitions
 ```
+
+If sqlite3 is not installed and you want to install it:
+
+```bash
+sudo apt install sqlite3
+```
+
+**Note**: Installing sqlite3 CLI is optional. The Node.js verification script (`verify_database.js`) provides comprehensive verification without requiring additional system packages.
 
 ### 3. Network Access Test
 
