@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Finding Sweetie</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐾</text></svg>">
+
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white/80 backdrop-blur-md shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition">
+                        <span class="text-3xl">🐾</span>
+                        <span class="text-xl font-bold">Finding Sweetie</span>
+                    </a>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition">Home</a>
+                    <a href="/lost-pet.html" class="text-gray-700 hover:text-blue-600 font-medium transition">Lost Pets</a>
+                    <a href="/found-pet.html" class="text-gray-700 hover:text-blue-600 font-medium transition">Found Pets</a>
+                    <a href="/about.html" class="text-gray-700 hover:text-blue-600 font-medium transition">About</a>
+                    <div id="nav-auth"></div>
+                </div>
+
+                <div class="md:hidden">
+                    <button id="mobile-menu-btn" class="text-gray-700 hover:text-blue-600 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="/" class="block px-3 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">Home</a>
+                <a href="/lost-pet.html" class="block px-3 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">Lost Pets</a>
+                <a href="/found-pet.html" class="block px-3 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">Found Pets</a>
+                <a href="/about.html" class="block px-3 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">About</a>
+                <div id="mobile-nav-auth" class="px-3 py-2"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login Form Section -->
+    <section class="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="text-5xl mb-4">🐾</div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+                <p class="text-gray-600">Log in to access your account</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="space-y-6">
+                <!-- Email Field -->
+                <div>
+                    <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Email Address
+                    </label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        placeholder="your@email.com"
+                    >
+                    <p id="email-error" class="text-red-500 text-sm mt-1 hidden"></p>
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Password
+                    </label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        placeholder="Enter your password"
+                    >
+                    <p id="password-error" class="text-red-500 text-sm mt-1 hidden"></p>
+                </div>
+
+                <!-- Error Message -->
+                <div id="form-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg hidden">
+                    <p class="text-sm"></p>
+                </div>
+
+                <!-- Submit Button -->
+                <button
+                    type="submit"
+                    id="submit-btn"
+                    class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 shadow-lg hover:shadow-xl transition transform hover:scale-105"
+                >
+                    Log In
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="mt-6 text-center">
+                <p class="text-gray-600">
+                    Don't have an account?
+                    <a href="/register.html" class="text-blue-600 hover:text-blue-700 font-semibold">
+                        Create Account
+                    </a>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p class="text-gray-300">© 2025 Finding Sweetie. All rights reserved.</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="/" class="text-gray-300 hover:text-white transition">Home</a>
+                    <a href="/about.html" class="text-gray-300 hover:text-white transition">About</a>
+                    <a href="/lost-pet.html" class="text-gray-300 hover:text-white transition">Lost Pets</a>
+                    <a href="/found-pet.html" class="text-gray-300 hover:text-white transition">Found Pets</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="/js/app.js"></script>
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+
+        // Check if already logged in, redirect to dashboard
+        checkSession().then(isAuthenticated => {
+            if (isAuthenticated) {
+                window.location.href = '/dashboard.html';
+            }
+        });
+
+        // Handle login form submission
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Clear previous errors
+            document.querySelectorAll('.text-red-500').forEach(el => el.classList.add('hidden'));
+            document.getElementById('form-error').classList.add('hidden');
+
+            // Get form values
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            // Validate
+            let isValid = true;
+
+            if (!isValidEmail(email)) {
+                document.getElementById('email-error').textContent = 'Please enter a valid email address';
+                document.getElementById('email-error').classList.remove('hidden');
+                isValid = false;
+            }
+
+            if (password.length === 0) {
+                document.getElementById('password-error').textContent = 'Please enter your password';
+                document.getElementById('password-error').classList.remove('hidden');
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            // Disable submit button
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Logging in...';
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showNotification('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard.html';
+                    }, 1000);
+                } else {
+                    // Show error
+                    const errorDiv = document.getElementById('form-error');
+                    errorDiv.querySelector('p').textContent = data.message || 'Invalid email or password';
+                    errorDiv.classList.remove('hidden');
+
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                const errorDiv = document.getElementById('form-error');
+                errorDiv.querySelector('p').textContent = 'An error occurred. Please try again.';
+                errorDiv.classList.remove('hidden');
+
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+    </script>
+</body>
+</html>

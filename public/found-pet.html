@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Found Pets - Finding Sweetie</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐾</text></svg>">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%); }
+        .pet-card { transition: all 0.3s ease; }
+        .pet-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1); }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Nav -->
+    <nav class="bg-white/80 backdrop-blur-md shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition">
+                        <span class="text-3xl">🐾</span>
+                        <span class="text-xl font-bold">Finding Sweetie</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition">Home</a>
+                    <a href="/lost-pet.html" class="text-gray-700 hover:text-blue-600 font-medium transition">Lost Pets</a>
+                    <a href="/found-pet.html" class="text-blue-600 font-bold">Found Pets</a>
+                    <a href="/about.html" class="text-gray-700 hover:text-blue-600 font-medium transition">About</a>
+                    <div id="nav-auth"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Found Pets</h1>
+        <p class="text-xl text-gray-600 mb-8">Looking for your lost pet? Search here</p>
+        
+        <!-- Search & Filter -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Zip Code</label>
+                    <input type="text" id="zip-filter" maxlength="5" placeholder="12345" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Pet Type</label>
+                    <select id="type-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Types</option>
+                        <option value="Dog">Dog</option>
+                        <option value="Cat">Cat</option>
+                        <option value="Bird">Bird</option>
+                        <option value="Rabbit">Rabbit</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button onclick="searchPets()" class="w-full bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">Search</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pets Grid -->
+        <div id="pets-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+        <!-- Loading -->
+        <div id="loading" class="text-center py-12 hidden">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+            <p class="text-gray-600 mt-4">Loading pets...</p>
+        </div>
+
+        <!-- No Results -->
+        <div id="no-results" class="text-center py-12 hidden">
+            <div class="text-6xl mb-4">🐾</div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">No Found Pets Yet</h3>
+            <p class="text-gray-600">Try adjusting your search filters</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <p class="text-gray-300 text-center">© 2025 Finding Sweetie. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+    <script>
+        checkSession();
+        loadPets();
+
+        async function loadPets() {
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('no-results').classList.add('hidden');
+            
+            try {
+                const zip = document.getElementById('zip-filter').value.trim();
+                const type = document.getElementById('type-filter').value;
+                
+                let url = '/api/pets/found?limit=100';
+                if (zip) url += `&zip=${zip}`;
+                if (type) url += `&type=${type}`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                const grid = document.getElementById('pets-grid');
+                grid.innerHTML = '';
+
+                if (data.pets && data.pets.length > 0) {
+                    data.pets.forEach(pet => {
+                        grid.innerHTML += `
+                            <div class="bg-white rounded-xl shadow-lg overflow-hidden pet-card cursor-pointer" onclick="viewPet(${pet.id})">
+                                <div class="h-48 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                                    ${pet.image_url ? `<img src="${pet.image_url}" class="w-full h-full object-cover">` : `<span class="text-6xl">${getPetEmoji(pet.pet_type)}</span>`}
+                                </div>
+                                <div class="p-6">
+                                    <div class="inline-block bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded mb-2">FOUND</div>
+                                    <h3 class="text-xl font-bold text-gray-900 mb-2">${escapeHtml(pet.pet_name || 'Unknown Name')}</h3>
+                                    <p class="text-gray-600 mb-2">${escapeHtml(pet.pet_type)} ${pet.pet_breed ? '• ' + escapeHtml(pet.pet_breed) : ''}</p>
+                                    <p class="text-gray-500 text-sm mb-3 line-clamp-2">${escapeHtml(pet.pet_description || 'No description')}</p>
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-gray-500">📍 ${escapeHtml(pet.last_seen_location || pet.zip_code)}</span>
+                                        <span class="text-gray-400">${timeAgo(pet.created_at)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    document.getElementById('no-results').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading pets:', error);
+                showNotification('Error loading pets', 'error');
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        function searchPets() {
+            loadPets();
+        }
+
+        function viewPet(id) {
+            window.location.href = `/pet-details.html?id=${id}`;
+        }
+
+        function getPetEmoji(type) {
+            const emojis = { Dog: '🐕', Cat: '🐈', Bird: '🐦', Rabbit: '🐰', Other: '🐾' };
+            return emojis[type] || '🐾';
+        }
+
+        document.getElementById('zip-filter').addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+    </script>
+</body>
+</html>
