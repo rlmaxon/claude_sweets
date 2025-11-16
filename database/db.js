@@ -27,33 +27,38 @@ function initializeDatabase() {
 // Run database migrations
 function runMigrations() {
   try {
-    // First, clean up any leftover pets_old table from failed migrations
-    try {
-      const oldTableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pets_old'").get();
-      if (oldTableExists) {
-        console.log('Cleaning up leftover pets_old table from previous migration attempt');
-        db.prepare('DROP TABLE pets_old').run();
-      }
-    } catch (cleanupError) {
-      console.log('No cleanup needed');
+    // Check current database state
+    const petsTableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pets'").get();
+    const petsOldTableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pets_old'").get();
+
+    console.log('Database state check:');
+    console.log('- pets table exists:', !!petsTableExists);
+    console.log('- pets_old table exists:', !!petsOldTableExists);
+
+    // Handle different states
+    if (petsOldTableExists && !petsTableExists) {
+      // Case 1: Only pets_old exists (failed migration state)
+      console.log('Recovering from failed migration: restoring pets_old to pets');
+      db.prepare('ALTER TABLE pets_old RENAME TO pets').run();
+      console.log('Restored pets table from pets_old');
+    } else if (petsOldTableExists && petsTableExists) {
+      // Case 2: Both tables exist (migration in progress)
+      console.log('Cleaning up leftover pets_old table from previous migration attempt');
+      db.prepare('DROP TABLE pets_old').run();
+      console.log('Cleanup complete');
     }
 
-    // Check if we need to update the CHECK constraint for Reunited status
+    // Now check if we need to update the CHECK constraint for Reunited status
     let needsConstraintUpdate = false;
 
-    try {
-      // Check if we can insert with Reunited status
-      const testQuery = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='pets'").get();
-      if (testQuery && testQuery.sql) {
-        // Check if 'Reunited' is in the CHECK constraint
-        needsConstraintUpdate = !testQuery.sql.includes("'Reunited'");
-        if (needsConstraintUpdate) {
-          console.log('Current constraint:', testQuery.sql);
-        }
+    const testQuery = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='pets'").get();
+    if (testQuery && testQuery.sql) {
+      // Check if 'Reunited' is in the CHECK constraint
+      needsConstraintUpdate = !testQuery.sql.includes("'Reunited'");
+      if (needsConstraintUpdate) {
+        console.log('Current constraint needs update');
+        console.log('Current SQL:', testQuery.sql.substring(0, 200) + '...');
       }
-    } catch (e) {
-      // If test fails, assume we need update
-      needsConstraintUpdate = true;
     }
 
     if (needsConstraintUpdate) {
@@ -64,6 +69,7 @@ function runMigrations() {
 
       // Step 1: Rename old table
       db.prepare('ALTER TABLE pets RENAME TO pets_old').run();
+      console.log('✓ Renamed pets to pets_old');
 
       // Step 2: Create new table with updated constraint
       db.exec(`
@@ -85,9 +91,10 @@ function runMigrations() {
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
       `);
+      console.log('✓ Created new pets table');
 
       // Step 3: Copy data from old table to new table
-      db.exec(`
+      const copyResult = db.prepare(`
         INSERT INTO pets (id, user_id, status, pet_type, pet_name, pet_breed,
                          pet_description, additional_comments, flag_chip, image_url,
                          last_seen_location, is_active, created_at, updated_at)
@@ -95,10 +102,12 @@ function runMigrations() {
                pet_description, additional_comments, flag_chip, image_url,
                last_seen_location, COALESCE(is_active, 1), created_at, updated_at
         FROM pets_old
-      `);
+      `).run();
+      console.log(`✓ Copied ${copyResult.changes} pets from old table`);
 
       // Step 4: Drop old table
       db.prepare('DROP TABLE pets_old').run();
+      console.log('✓ Dropped pets_old table');
 
       // Step 5: Recreate indexes
       db.exec(`
@@ -108,17 +117,20 @@ function runMigrations() {
         CREATE INDEX IF NOT EXISTS idx_pets_location ON pets(last_seen_location);
         CREATE INDEX IF NOT EXISTS idx_pets_created ON pets(created_at DESC);
       `);
+      console.log('✓ Recreated indexes');
 
       // Re-enable foreign keys
       db.pragma('foreign_keys = ON');
 
-      console.log('Migration complete: Updated pets table with is_active column and Reunited status');
+      console.log('✅ Migration complete: Updated pets table with is_active column and Reunited status');
     } else {
-      console.log('Database schema is up to date');
+      console.log('✅ Database schema is up to date');
     }
   } catch (error) {
-    console.error('Migration error:', error);
+    console.error('❌ Migration error:', error);
     console.error('Error details:', error.message);
+    console.error('Stack:', error.stack);
+
     // Try to restore if migration fails
     try {
       const oldTableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pets_old'").get();
@@ -126,10 +138,10 @@ function runMigrations() {
         console.log('Attempting to restore from pets_old...');
         db.prepare('DROP TABLE IF EXISTS pets').run();
         db.prepare('ALTER TABLE pets_old RENAME TO pets').run();
-        console.log('Restored old pets table after migration failure');
+        console.log('✓ Restored old pets table after migration failure');
       }
     } catch (restoreError) {
-      console.error('Failed to restore old table:', restoreError);
+      console.error('❌ Failed to restore old table:', restoreError);
     }
     throw error; // Re-throw to prevent server from starting with broken DB
   }
