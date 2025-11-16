@@ -18,9 +18,9 @@ const PRECACHE_URLS = [
   '/offline.html',
   '/js/app.js',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  'https://cdn.tailwindcss.com'
+  '/icons/icon-192x192.svg',
+  '/icons/icon-512x512.svg'
+  // Note: Tailwind CDN not cached (external resource)
 ];
 
 // Install event - cache essential resources
