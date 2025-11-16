@@ -27,12 +27,27 @@ function initializeDatabase() {
 // Run database migrations
 function runMigrations() {
   try {
-    // Check if is_active column exists in pets table
-    const tableInfo = db.prepare("PRAGMA table_info(pets)").all();
-    const hasIsActive = tableInfo.some(col => col.name === 'is_active');
+    // Check if we need to update the CHECK constraint for Reunited status
+    // by trying to temporarily set a pet to Reunited (if any exist)
+    let needsConstraintUpdate = false;
 
-    if (!hasIsActive) {
+    try {
+      // Check if we can insert with Reunited status
+      const testQuery = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='pets'").get();
+      if (testQuery && testQuery.sql) {
+        // Check if 'Reunited' is in the CHECK constraint
+        needsConstraintUpdate = !testQuery.sql.includes("'Reunited'");
+      }
+    } catch (e) {
+      // If test fails, assume we need update
+      needsConstraintUpdate = true;
+    }
+
+    if (needsConstraintUpdate) {
       console.log('Running migration: Adding is_active column and updating CHECK constraint');
+
+      // Disable foreign keys temporarily
+      db.pragma('foreign_keys = OFF');
 
       // Step 1: Rename old table
       db.prepare('ALTER TABLE pets RENAME TO pets_old').run();
@@ -65,7 +80,7 @@ function runMigrations() {
                          last_seen_location, is_active, created_at, updated_at)
         SELECT id, user_id, status, pet_type, pet_name, pet_breed,
                pet_description, additional_comments, flag_chip, image_url,
-               last_seen_location, 1, created_at, updated_at
+               last_seen_location, COALESCE(is_active, 1), created_at, updated_at
         FROM pets_old
       `);
 
@@ -81,10 +96,21 @@ function runMigrations() {
         CREATE INDEX IF NOT EXISTS idx_pets_created ON pets(created_at DESC);
       `);
 
+      // Re-enable foreign keys
+      db.pragma('foreign_keys = ON');
+
       console.log('Migration complete: Updated pets table with is_active column and Reunited status');
     }
   } catch (error) {
     console.error('Migration error:', error);
+    // Try to restore if migration fails
+    try {
+      db.prepare('DROP TABLE IF EXISTS pets').run();
+      db.prepare('ALTER TABLE pets_old RENAME TO pets').run();
+      console.log('Restored old pets table after migration failure');
+    } catch (restoreError) {
+      console.error('Failed to restore old table:', restoreError);
+    }
   }
 }
 
