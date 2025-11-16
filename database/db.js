@@ -32,11 +32,56 @@ function runMigrations() {
     const hasIsActive = tableInfo.some(col => col.name === 'is_active');
 
     if (!hasIsActive) {
-      console.log('Running migration: Adding is_active column to pets table');
-      db.prepare('ALTER TABLE pets ADD COLUMN is_active BOOLEAN DEFAULT 1').run();
-      // Set all existing pets to active
-      const result = db.prepare('UPDATE pets SET is_active = 1 WHERE is_active IS NULL').run();
-      console.log(`Migration complete: Added is_active column, updated ${result.changes} existing pets`);
+      console.log('Running migration: Adding is_active column and updating CHECK constraint');
+
+      // Step 1: Rename old table
+      db.prepare('ALTER TABLE pets RENAME TO pets_old').run();
+
+      // Step 2: Create new table with updated constraint
+      db.exec(`
+        CREATE TABLE pets (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          status TEXT NOT NULL CHECK(status IN ('Lost', 'Found', 'Reunited')),
+          pet_type TEXT NOT NULL,
+          pet_name TEXT,
+          pet_breed TEXT,
+          pet_description TEXT,
+          additional_comments TEXT,
+          flag_chip BOOLEAN DEFAULT 0,
+          image_url TEXT,
+          last_seen_location TEXT,
+          is_active BOOLEAN DEFAULT 1,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `);
+
+      // Step 3: Copy data from old table to new table
+      db.exec(`
+        INSERT INTO pets (id, user_id, status, pet_type, pet_name, pet_breed,
+                         pet_description, additional_comments, flag_chip, image_url,
+                         last_seen_location, is_active, created_at, updated_at)
+        SELECT id, user_id, status, pet_type, pet_name, pet_breed,
+               pet_description, additional_comments, flag_chip, image_url,
+               last_seen_location, 1, created_at, updated_at
+        FROM pets_old
+      `);
+
+      // Step 4: Drop old table
+      db.prepare('DROP TABLE pets_old').run();
+
+      // Step 5: Recreate indexes
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_pets_user_id ON pets(user_id);
+        CREATE INDEX IF NOT EXISTS idx_pets_status ON pets(status);
+        CREATE INDEX IF NOT EXISTS idx_pets_type ON pets(pet_type);
+        CREATE INDEX IF NOT EXISTS idx_pets_location ON pets(last_seen_location);
+        CREATE INDEX IF NOT EXISTS idx_pets_created ON pets(created_at DESC);
+      `);
+
+      console.log('Migration complete: Updated pets table with is_active column and Reunited status');
     }
   } catch (error) {
     console.error('Migration error:', error);
