@@ -356,6 +356,66 @@ router.put('/:id', requireAuth, validateId, upload.array('pet_images', 5), valid
 });
 
 /**
+ * PATCH /api/pets/:id/status
+ * Update a pet's status (mark as reunited/reactivate)
+ */
+router.patch('/:id/status', requireAuth, validateId, (req, res) => {
+  try {
+    const petId = req.params.id;
+    const userId = req.session.userId;
+    const { status, is_active } = req.body;
+
+    // Verify ownership
+    const existingPet = statements.getPetById.get(petId);
+    if (!existingPet) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Pet not found'
+      });
+    }
+
+    if (existingPet.user_id !== userId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You do not have permission to update this pet'
+      });
+    }
+
+    // Validate status if provided
+    const validStatuses = ['Lost', 'Found', 'Reunited'];
+    const newStatus = status || existingPet.status;
+    const newIsActive = is_active !== undefined ? (is_active ? 1 : 0) : existingPet.is_active;
+
+    if (!validStatuses.includes(newStatus)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Invalid status. Must be Lost, Found, or Reunited'
+      });
+    }
+
+    // Update pet status
+    statements.updatePetStatus.run(newStatus, newIsActive, petId, userId);
+
+    res.json({
+      success: true,
+      message: 'Pet status updated successfully',
+      pet: {
+        id: petId,
+        status: newStatus,
+        is_active: newIsActive
+      }
+    });
+
+  } catch (error) {
+    console.error('Update pet status error:', error);
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to update pet status'
+    });
+  }
+});
+
+/**
  * DELETE /api/pets/:id
  * Delete a pet (owner only)
  */

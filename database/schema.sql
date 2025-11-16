@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS pets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
-    status TEXT NOT NULL CHECK(status IN ('Lost', 'Found')),
+    status TEXT NOT NULL CHECK(status IN ('Lost', 'Found', 'Reunited')),
     pet_type TEXT NOT NULL,
     pet_name TEXT,
     pet_breed TEXT,
@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS pets (
     flag_chip BOOLEAN DEFAULT 0,
     image_url TEXT,
     last_seen_location TEXT,
+    is_active BOOLEAN DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
