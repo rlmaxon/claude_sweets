@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Finding Sweetie</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?suppress-warnings=true"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐾</text></svg>">
 
     <!-- PWA Manifest -->
@@ -24,6 +24,35 @@
 
     <style>
         .gradient-bg { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%); }
+        .image-gallery {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+        .image-gallery::-webkit-scrollbar {
+            height: 4px;
+        }
+        .image-gallery::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        .gallery-image {
+            flex-shrink: 0;
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .gallery-image:hover {
+            transform: scale(1.1);
+        }
+        .gallery-image.primary {
+            border: 2px solid #3b82f6;
+        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen">
@@ -57,16 +86,16 @@
 
         <!-- Quick Actions -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <button onclick="showAddPetModal('Lost')" class="bg-blue-600 text-white p-6 rounded-xl shadow-lg hover:bg-blue-700 transition">
+            <a href="/report-pet.html" class="bg-blue-600 text-white p-6 rounded-xl shadow-lg hover:bg-blue-700 transition block text-center">
                 <div class="text-4xl mb-2">🐕</div>
                 <h3 class="text-xl font-bold mb-1">Report Lost Pet</h3>
                 <p class="text-blue-100">Help find your missing pet</p>
-            </button>
-            <button onclick="showAddPetModal('Found')" class="bg-green-600 text-white p-6 rounded-xl shadow-lg hover:bg-green-700 transition">
+            </a>
+            <a href="/report-pet.html" class="bg-green-600 text-white p-6 rounded-xl shadow-lg hover:bg-green-700 transition block text-center">
                 <div class="text-4xl mb-2">📍</div>
                 <h3 class="text-xl font-bold mb-1">Report Found Pet</h3>
                 <p class="text-green-100">Help reunite a pet with its owner</p>
-            </button>
+            </a>
         </div>
 
         <!-- My Pets -->
@@ -191,13 +220,30 @@
                     const grid = document.getElementById('my-pets');
                     grid.innerHTML = '';
                     pets.pets.forEach(pet => {
+                        // Create image gallery HTML
+                        let imageGalleryHTML = '';
+                        if (pet.images && pet.images.length > 0) {
+                            imageGalleryHTML = `
+                                <div class="image-gallery">
+                                    ${pet.images.map(img => `
+                                        <img src="${escapeHtml(img.image_url)}"
+                                             class="gallery-image ${img.is_primary ? 'primary' : ''}"
+                                             alt="${escapeHtml(pet.pet_name || 'Pet')}"
+                                             title="${img.is_primary ? 'Primary image' : ''}"
+                                             onclick="window.open('${escapeHtml(img.image_url)}', '_blank')">
+                                    `).join('')}
+                                </div>
+                            `;
+                        }
+
                         grid.innerHTML += `
                             <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                ${imageGalleryHTML}
                                 <div class="flex justify-between items-start mb-2">
                                     <h3 class="font-bold text-lg">${escapeHtml(pet.pet_name || 'Unknown')}</h3>
                                     <span class="px-2 py-1 text-xs font-semibold rounded ${pet.status === 'Lost' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${pet.status}</span>
                                 </div>
-                                <p class="text-gray-600 text-sm mb-2">${pet.pet_type} ${pet.pet_breed ? '• ' + pet.pet_breed : ''}</p>
+                                <p class="text-gray-600 text-sm mb-2">${pet.pet_type} ${pet.pet_breed ? '• ' + escapeHtml(pet.pet_breed) : ''}</p>
                                 <p class="text-gray-500 text-sm mb-3">${escapeHtml(pet.pet_description || '')}</p>
                                 <div class="text-xs text-gray-400">${formatDate(pet.created_at)}</div>
                             </div>

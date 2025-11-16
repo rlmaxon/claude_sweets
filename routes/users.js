@@ -162,17 +162,26 @@ router.post('/change-password', requireAuth, async (req, res) => {
 
 /**
  * GET /api/user/pets
- * Get all pets registered by the current user
+ * Get all pets registered by the current user with their images
  */
 router.get('/pets', requireAuth, (req, res) => {
   try {
     const userId = req.session.userId;
     const pets = statements.getPetsByUserId.all(userId);
 
+    // Fetch images for each pet
+    const petsWithImages = pets.map(pet => {
+      const images = statements.getPetImages.all(pet.id);
+      return {
+        ...pet,
+        images: images // Add images array to each pet
+      };
+    });
+
     res.json({
       success: true,
-      count: pets.length,
-      pets: pets
+      count: petsWithImages.length,
+      pets: petsWithImages
     });
 
   } catch (error) {

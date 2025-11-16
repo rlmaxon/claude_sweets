@@ -38,9 +38,9 @@ const upload = multer({
 
 /**
  * POST /api/pets/register
- * Register a new pet (lost or found)
+ * Register a new pet (lost or found) with multiple images
  */
-router.post('/register', requireAuth, upload.single('pet_image'), validatePet, (req, res) => {
+router.post('/register', requireAuth, upload.array('pet_images', 5), validatePet, (req, res) => {
   try {
     const {
       status,
@@ -54,7 +54,9 @@ router.post('/register', requireAuth, upload.single('pet_image'), validatePet, (
     } = req.body;
 
     const user_id = req.session.userId;
-    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+
+    // Keep backward compatibility - use first image as primary image_url
+    const image_url = req.files && req.files.length > 0 ? `/uploads/${req.files[0].filename}` : null;
 
     // Insert pet into database
     const result = statements.createPet.run(
@@ -70,15 +72,27 @@ router.post('/register', requireAuth, upload.single('pet_image'), validatePet, (
       last_seen_location || null
     );
 
+    const petId = result.lastInsertRowid;
+
+    // Insert all uploaded images into pet_images table
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file, index) => {
+        const isPrimary = index === 0 ? 1 : 0; // First image is primary
+        const imageUrl = `/uploads/${file.filename}`;
+        statements.createPetImage.run(petId, imageUrl, isPrimary, index);
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: 'Pet registered successfully',
       pet: {
-        id: result.lastInsertRowid,
+        id: petId,
         status,
         pet_type,
         pet_name,
-        image_url
+        image_url,
+        image_count: req.files ? req.files.length : 0
       }
     });
 
@@ -117,20 +131,27 @@ router.get('/lost', validateSearch, (req, res) => {
       pets = statements.searchLostPets.all(parseInt(limit), offset);
     }
 
-    res.json({
-      success: true,
-      count: pets.length,
-      pets: pets.map(pet => ({
+    // Fetch images for each pet
+    const petsWithImages = pets.map(pet => {
+      const images = statements.getPetImages.all(pet.id);
+      return {
         id: pet.id,
         pet_type: pet.pet_type,
         pet_name: pet.pet_name,
         pet_breed: pet.pet_breed,
         pet_description: pet.pet_description,
-        image_url: pet.image_url,
+        image_url: pet.image_url, // Keep for backward compatibility
+        images: images, // New multi-image array
         last_seen_location: pet.last_seen_location,
         zip_code: pet.zip_code,
         created_at: pet.created_at
-      }))
+      };
+    });
+
+    res.json({
+      success: true,
+      count: petsWithImages.length,
+      pets: petsWithImages
     });
 
   } catch (error) {
@@ -168,20 +189,27 @@ router.get('/found', validateSearch, (req, res) => {
       pets = statements.searchFoundPets.all(parseInt(limit), offset);
     }
 
-    res.json({
-      success: true,
-      count: pets.length,
-      pets: pets.map(pet => ({
+    // Fetch images for each pet
+    const petsWithImages = pets.map(pet => {
+      const images = statements.getPetImages.all(pet.id);
+      return {
         id: pet.id,
         pet_type: pet.pet_type,
         pet_name: pet.pet_name,
         pet_breed: pet.pet_breed,
         pet_description: pet.pet_description,
-        image_url: pet.image_url,
+        image_url: pet.image_url, // Keep for backward compatibility
+        images: images, // New multi-image array
         last_seen_location: pet.last_seen_location,
         zip_code: pet.zip_code,
         created_at: pet.created_at
-      }))
+      };
+    });
+
+    res.json({
+      success: true,
+      count: petsWithImages.length,
+      pets: petsWithImages
     });
 
   } catch (error) {
@@ -208,6 +236,9 @@ router.get('/:id', validateId, (req, res) => {
       });
     }
 
+    // Fetch images for this pet
+    const images = statements.getPetImages.all(pet.id);
+
     res.json({
       success: true,
       pet: {
@@ -219,7 +250,8 @@ router.get('/:id', validateId, (req, res) => {
         pet_description: pet.pet_description,
         additional_comments: pet.additional_comments,
         flag_chip: pet.flag_chip,
-        image_url: pet.image_url,
+        image_url: pet.image_url, // Keep for backward compatibility
+        images: images, // New multi-image array
         last_seen_location: pet.last_seen_location,
         created_at: pet.created_at,
         contact: {
@@ -241,9 +273,9 @@ router.get('/:id', validateId, (req, res) => {
 
 /**
  * PUT /api/pets/:id
- * Update a pet's information (owner only)
+ * Update a pet's information (owner only) with multiple images
  */
-router.put('/:id', requireAuth, validateId, upload.single('pet_image'), validatePet, (req, res) => {
+router.put('/:id', requireAuth, validateId, upload.array('pet_images', 5), validatePet, (req, res) => {
   try {
     const petId = req.params.id;
     const userId = req.session.userId;
@@ -275,7 +307,10 @@ router.put('/:id', requireAuth, validateId, upload.single('pet_image'), validate
       last_seen_location
     } = req.body;
 
-    const image_url = req.file ? `/uploads/${req.file.filename}` : existingPet.image_url;
+    // Keep backward compatibility - use first image as primary image_url
+    const image_url = req.files && req.files.length > 0
+      ? `/uploads/${req.files[0].filename}`
+      : existingPet.image_url;
 
     // Update pet
     statements.updatePet.run(
@@ -291,6 +326,20 @@ router.put('/:id', requireAuth, validateId, upload.single('pet_image'), validate
       petId,
       userId
     );
+
+    // If new images uploaded, add them to pet_images table
+    if (req.files && req.files.length > 0) {
+      // Get current image count to set proper display order
+      const existingImages = statements.getPetImages.all(petId);
+      const startOrder = existingImages.length;
+
+      req.files.forEach((file, index) => {
+        const imageUrl = `/uploads/${file.filename}`;
+        const isPrimary = (existingImages.length === 0 && index === 0) ? 1 : 0;
+        const displayOrder = startOrder + index;
+        statements.createPetImage.run(petId, imageUrl, isPrimary, displayOrder);
+      });
+    }
 
     res.json({
       success: true,
@@ -344,6 +393,67 @@ router.delete('/:id', requireAuth, validateId, (req, res) => {
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to delete pet'
+    });
+  }
+});
+
+/**
+ * DELETE /api/pets/:petId/images/:imageId
+ * Delete a specific image from a pet (owner only)
+ */
+router.delete('/:petId/images/:imageId', requireAuth, (req, res) => {
+  try {
+    const { petId, imageId } = req.params;
+    const userId = req.session.userId;
+
+    // Verify pet ownership
+    const pet = statements.getPetById.get(petId);
+    if (!pet) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Pet not found'
+      });
+    }
+
+    if (pet.user_id !== userId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You do not have permission to modify this pet'
+      });
+    }
+
+    // Check if this image is the primary image
+    const images = statements.getPetImages.all(petId);
+    const imageToDelete = images.find(img => img.id === parseInt(imageId));
+
+    if (!imageToDelete) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Image not found'
+      });
+    }
+
+    // Delete the image
+    statements.deletePetImage.run(imageId);
+
+    // If we deleted the primary image and there are other images, set a new primary
+    if (imageToDelete.is_primary && images.length > 1) {
+      const remainingImages = statements.getPetImages.all(petId);
+      if (remainingImages.length > 0) {
+        statements.updatePetImagePrimary.run(1, remainingImages[0].id);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Image deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete image error:', error);
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to delete image'
     });
   }
 });

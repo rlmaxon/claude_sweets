@@ -32,6 +32,17 @@ CREATE TABLE IF NOT EXISTS pets (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Pet images table (for multiple images per pet)
+CREATE TABLE IF NOT EXISTS pet_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pet_id INTEGER NOT NULL,
+    image_url TEXT NOT NULL,
+    is_primary BOOLEAN DEFAULT 0,
+    display_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_zip ON users(zip_code);
@@ -40,3 +51,5 @@ CREATE INDEX IF NOT EXISTS idx_pets_status ON pets(status);
 CREATE INDEX IF NOT EXISTS idx_pets_type ON pets(pet_type);
 CREATE INDEX IF NOT EXISTS idx_pets_location ON pets(last_seen_location);
 CREATE INDEX IF NOT EXISTS idx_pets_created ON pets(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pet_images_pet_id ON pet_images(pet_id);
+CREATE INDEX IF NOT EXISTS idx_pet_images_primary ON pet_images(pet_id, is_primary);
