@@ -27,8 +27,18 @@ function initializeDatabase() {
 // Run database migrations
 function runMigrations() {
   try {
+    // First, clean up any leftover pets_old table from failed migrations
+    try {
+      const oldTableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pets_old'").get();
+      if (oldTableExists) {
+        console.log('Cleaning up leftover pets_old table from previous migration attempt');
+        db.prepare('DROP TABLE pets_old').run();
+      }
+    } catch (cleanupError) {
+      console.log('No cleanup needed');
+    }
+
     // Check if we need to update the CHECK constraint for Reunited status
-    // by trying to temporarily set a pet to Reunited (if any exist)
     let needsConstraintUpdate = false;
 
     try {
@@ -37,6 +47,9 @@ function runMigrations() {
       if (testQuery && testQuery.sql) {
         // Check if 'Reunited' is in the CHECK constraint
         needsConstraintUpdate = !testQuery.sql.includes("'Reunited'");
+        if (needsConstraintUpdate) {
+          console.log('Current constraint:', testQuery.sql);
+        }
       }
     } catch (e) {
       // If test fails, assume we need update
@@ -100,17 +113,25 @@ function runMigrations() {
       db.pragma('foreign_keys = ON');
 
       console.log('Migration complete: Updated pets table with is_active column and Reunited status');
+    } else {
+      console.log('Database schema is up to date');
     }
   } catch (error) {
     console.error('Migration error:', error);
+    console.error('Error details:', error.message);
     // Try to restore if migration fails
     try {
-      db.prepare('DROP TABLE IF EXISTS pets').run();
-      db.prepare('ALTER TABLE pets_old RENAME TO pets').run();
-      console.log('Restored old pets table after migration failure');
+      const oldTableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pets_old'").get();
+      if (oldTableExists) {
+        console.log('Attempting to restore from pets_old...');
+        db.prepare('DROP TABLE IF EXISTS pets').run();
+        db.prepare('ALTER TABLE pets_old RENAME TO pets').run();
+        console.log('Restored old pets table after migration failure');
+      }
     } catch (restoreError) {
       console.error('Failed to restore old table:', restoreError);
     }
+    throw error; // Re-throw to prevent server from starting with broken DB
   }
 }
 
