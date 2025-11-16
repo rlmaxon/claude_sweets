@@ -151,6 +151,30 @@ function runMigrations() {
 initializeDatabase();
 runMigrations();
 
+// Verify pet_images table exists before creating prepared statements
+try {
+  const petImagesExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pet_images'").get();
+  if (!petImagesExists) {
+    console.log('WARNING: pet_images table missing, creating it now...');
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS pet_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pet_id INTEGER NOT NULL,
+        image_url TEXT NOT NULL,
+        is_primary BOOLEAN DEFAULT 0,
+        display_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
+      );
+      CREATE INDEX IF NOT EXISTS idx_pet_images_pet_id ON pet_images(pet_id);
+      CREATE INDEX IF NOT EXISTS idx_pet_images_primary ON pet_images(pet_id, is_primary);
+    `);
+    console.log('✓ Created pet_images table');
+  }
+} catch (error) {
+  console.error('Error checking pet_images table:', error);
+}
+
 // Prepared statements for better performance and security
 const statements = {
   // User queries
