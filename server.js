@@ -2,7 +2,21 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
 const { db } = require('./database/db');
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('Created uploads directory');
+}
+// Ensure uploads directory has write permissions
+try {
+  fs.accessSync(uploadsDir, fs.constants.W_OK);
+} catch (err) {
+  console.error('Warning: uploads directory is not writable');
+}
 
 // Import routes
 const authRoutes = require('./routes/auth');
