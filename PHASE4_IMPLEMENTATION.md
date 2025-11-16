@@ -22,7 +22,17 @@ Phase 4 adds advanced pet management features including multi-image uploads (up 
 - Visual status badges (Lost=red, Found=green, Reunited=blue)
 - Confirmation dialogs before status changes
 
-### 3. Enhanced UI/UX
+### 3. Pet Editing & Image Management
+- **Edit pet information** from dashboard
+- Update all pet details (name, breed, description, location, etc.)
+- **Manage images:** View, add, and delete images
+- Visual indication of primary image (blue border)
+- Prevent exceeding 5 image limit
+- Real-time image preview during editing
+- Delete individual images with confirmation
+- Automatic primary image reassignment when primary deleted
+
+### 4. Enhanced UI/UX
 - Responsive image galleries with carousel navigation
 - Arrow navigation and indicator dots
 - Image count badges
@@ -275,21 +285,57 @@ curl http://localhost:3000/api/pets/found?limit=20
 curl http://localhost:3000/api/pets/1
 ```
 
-### Test 6: Delete Individual Images
+### Test 6: Edit Pet Information & Manage Images
 
 **Steps:**
-1. Create a pet with multiple images
-2. In dashboard or edit view, locate image deletion controls
-3. Click delete button on a specific image
-4. Verify image is removed
-5. If you delete the primary image, verify another image becomes primary
+1. Log in to your account
+2. Navigate to http://localhost:3000/dashboard.html
+3. Find any pet and click the "Edit Pet" button
+4. **Edit modal should open showing:**
+   - Current images with delete (×) buttons
+   - Blue border on primary image
+   - "PRIMARY" badge on primary image
+   - All current pet information pre-filled
 
-**Note:** Image deletion UI may need to be added to dashboard in a future update. Currently supported via API:
+5. **Test editing pet details:**
+   - Change pet name, breed, or description
+   - Update status (Lost/Found/Reunited)
+   - Modify location or comments
+   - Toggle microchip checkbox
+   - Click "Save Changes"
+   - Verify success notification
+   - Confirm changes appear in dashboard
 
-```bash
-# Delete specific image
-curl -X DELETE http://localhost:3000/api/pets/1/images/5
-```
+6. **Test deleting images:**
+   - Click "Edit Pet" again
+   - Click the × button on any image
+   - Confirm deletion dialog
+   - Verify image is removed from preview
+   - If you deleted the primary image, verify another image now has the blue border and "PRIMARY" badge
+   - Click "Save Changes" or "Cancel"
+
+7. **Test adding new images:**
+   - Click "Edit Pet" again
+   - Click "Choose Files" under "Add New Images"
+   - Select 1-3 new images
+   - Verify total images don't exceed 5
+   - Click "Save Changes"
+   - Verify new images appear in dashboard
+
+8. **Test 5-image limit:**
+   - If pet has 5 images, try adding more
+   - Verify error message: "You can only have 5 images total. You currently have X image(s). Remove some before adding more."
+
+**Expected Results:**
+- Edit modal opens with all current pet data
+- Current images display with delete controls
+- Primary image clearly indicated
+- Can update any pet field
+- Can delete individual images
+- Can add new images (respecting 5-image limit)
+- Primary image automatically reassigned if deleted
+- All changes persist after saving
+- Confirmation dialogs appear for destructive actions
 
 ## File Structure
 
@@ -303,7 +349,7 @@ curl -X DELETE http://localhost:3000/api/pets/1/images/5
 │   ├── pets.js                  # Pet endpoints (updated for multi-image)
 │   └── users.js                 # User endpoints (updated)
 ├── public/
-│   ├── dashboard.html           # Updated with status controls
+│   ├── dashboard.html           # Updated with status controls & edit modal
 │   ├── lost-pet.html           # Updated with image carousel
 │   ├── found-pet.html          # Updated with image carousel
 │   └── report-pet.html         # NEW - Multi-image upload form
@@ -338,6 +384,22 @@ Body:
     "status": "Lost" | "Found" | "Reunited",
     "is_active": boolean
   }
+```
+
+### Update Pet Information
+```
+PUT /api/pets/:id
+Content-Type: multipart/form-data
+Body:
+  - status: "Lost" | "Found" | "Reunited"
+  - pet_type: string
+  - pet_name: string (optional)
+  - pet_breed: string (optional)
+  - pet_description: string (required)
+  - last_seen_location: string (optional)
+  - additional_comments: string (optional)
+  - flag_chip: boolean
+  - pet_images: File[] (optional, will add to existing images)
 ```
 
 ### Delete Pet Image
@@ -446,6 +508,10 @@ Phase 4 is successfully implemented when:
 - ✅ Reunited pets hidden from public searches
 - ✅ Reunited pets visible in owner's dashboard
 - ✅ Users can reactivate listings
+- ✅ **Users can edit pet information from dashboard**
+- ✅ **Users can add/remove images via edit modal**
+- ✅ **Primary image automatically reassigned when deleted**
+- ✅ **5-image limit enforced with clear error messages**
 - ✅ Database migration completes without errors
 - ✅ All existing pet data preserved
 - ✅ No console errors in browser
@@ -456,12 +522,13 @@ Phase 4 is successfully implemented when:
 Potential Phase 5 features:
 - Email notifications when matching pets found
 - SMS alerts for nearby lost/found pets
-- Pet profile editing with image management UI
 - Image upload progress indicators
 - Image compression/optimization
 - Geolocation-based search with maps
 - Social media sharing
 - Print "Lost Pet" flyers
+- Batch image upload optimization
+- Image reordering/setting different primary image
 
 ## Support
 
