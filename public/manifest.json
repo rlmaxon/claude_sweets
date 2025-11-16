@@ -1,0 +1,22 @@
+{
+  "name": "Finding Sweetie",
+  "short_name": "FindingSweetie",
+  "description": "Reuniting lost pets with their families - A community-driven platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0f9ff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "utilities"],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
