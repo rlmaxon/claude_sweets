@@ -81,6 +81,38 @@ const statements = {
     DELETE FROM pets WHERE id = ? AND user_id = ?
   `),
 
+  // Pet image queries
+  createPetImage: db.prepare(`
+    INSERT INTO pet_images (pet_id, image_url, is_primary, display_order)
+    VALUES (?, ?, ?, ?)
+  `),
+
+  getPetImages: db.prepare(`
+    SELECT * FROM pet_images
+    WHERE pet_id = ?
+    ORDER BY is_primary DESC, display_order ASC
+  `),
+
+  getPrimaryImage: db.prepare(`
+    SELECT * FROM pet_images
+    WHERE pet_id = ? AND is_primary = 1
+    LIMIT 1
+  `),
+
+  deletePetImage: db.prepare(`
+    DELETE FROM pet_images WHERE id = ?
+  `),
+
+  deleteAllPetImages: db.prepare(`
+    DELETE FROM pet_images WHERE pet_id = ?
+  `),
+
+  updatePetImagePrimary: db.prepare(`
+    UPDATE pet_images
+    SET is_primary = ?
+    WHERE id = ?
+  `),
+
   // Search queries
   searchLostPets: db.prepare(`
     SELECT p.*, u.zip_code
