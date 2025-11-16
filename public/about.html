@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Finding Sweetie</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐾</text></svg>">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#3b82f6">
+
+    <!-- iOS Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="FindingSweetie">
+
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.svg">
+
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%); }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Nav -->
+    <nav class="bg-white/80 backdrop-blur-md shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition">
+                        <span class="text-3xl">🐾</span>
+                        <span class="text-xl font-bold">Finding Sweetie</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition">Home</a>
+                    <a href="/lost-pet.html" class="text-gray-700 hover:text-blue-600 font-medium transition">Lost Pets</a>
+                    <a href="/found-pet.html" class="text-gray-700 hover:text-blue-600 font-medium transition">Found Pets</a>
+                    <a href="/about.html" class="text-blue-600 font-bold">About</a>
+                    <div id="nav-auth"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- About Content -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="text-center mb-12">
+            <div class="text-6xl mb-4">🐾</div>
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">About Finding Sweetie</h1>
+            <p class="text-xl text-gray-600">Helping pets find their way home, one reunion at a time</p>
+        </div>
+
+        <!-- Mission Statement -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Our Mission</h2>
+            <p class="text-gray-700 leading-relaxed mb-4">
+                Finding Sweetie is a community-driven platform dedicated to reuniting lost pets with their families. We believe that every pet deserves to find their way home, and every owner deserves peace of mind.
+            </p>
+            <p class="text-gray-700 leading-relaxed">
+                Our secure, user-friendly platform makes it easy to report lost or found pets, search for matches in your area, and connect with other pet owners in your community.
+            </p>
+        </div>
+
+        <!-- How It Works -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">How It Works</h2>
+            
+            <div class="space-y-6">
+                <div class="flex items-start">
+                    <div class="text-3xl mr-4">1️⃣</div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">Create a Free Account</h3>
+                        <p class="text-gray-700">Sign up with your email and basic information to get started.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start">
+                    <div class="text-3xl mr-4">2️⃣</div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">Report a Lost or Found Pet</h3>
+                        <p class="text-gray-700">Upload photos, descriptions, and location details to help others identify your pet or the pet you found.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start">
+                    <div class="text-3xl mr-4">3️⃣</div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">Search and Connect</h3>
+                        <p class="text-gray-700">Browse listings filtered by location and pet type. When you find a match, connect securely through our platform.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start">
+                    <div class="text-3xl mr-4">4️⃣</div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">Happy Reunion</h3>
+                        <p class="text-gray-700">Celebrate the joy of bringing a beloved pet back home where they belong.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Key Features</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-2">🔒 Secure & Private</h3>
+                    <p class="text-gray-700 text-sm">Your data is protected with industry-standard security measures.</p>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-2">📱 Email & SMS Alerts</h3>
+                    <p class="text-gray-700 text-sm">Get notified when potential matches are found in your area.</p>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-2">📍 Location-Based Search</h3>
+                    <p class="text-gray-700 text-sm">Find pets near you with our zip code filtering system.</p>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-2">🆓 Always Free</h3>
+                    <p class="text-gray-700 text-sm">No hidden fees. Finding Sweetie is completely free to use.</p>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-2">🐾 Microchip Tracking</h3>
+                    <p class="text-gray-700 text-sm">Track which pets have microchips for easier identification.</p>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-2">👥 Community Support</h3>
+                    <p class="text-gray-700 text-sm">Join a caring community dedicated to helping pets find home.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technology -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Built with Care</h2>
+            <p class="text-gray-700 leading-relaxed mb-4">
+                Finding Sweetie is built on modern, secure, and open-source technology:
+            </p>
+            <ul class="text-gray-700 space-y-2 ml-6">
+                <li>✓ Node.js & Express backend for reliable performance</li>
+                <li>✓ SQLite database for data integrity</li>
+                <li>✓ Bcrypt password encryption for account security</li>
+                <li>✓ Mobile-responsive design that works on any device</li>
+                <li>✓ Progressive Web App features for offline access</li>
+            </ul>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-2xl p-12 text-center text-white">
+            <h2 class="text-3xl font-bold mb-4">Ready to Make a Difference?</h2>
+            <p class="text-xl mb-8 opacity-90">
+                Join Finding Sweetie today and help reunite pets with their families.
+            </p>
+            <a href="/register.html" class="inline-block bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 shadow-lg transition">
+                Get Started Free
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p class="text-gray-300">© 2025 Finding Sweetie. All rights reserved.</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="/" class="text-gray-300 hover:text-white transition">Home</a>
+                    <a href="/about.html" class="text-gray-300 hover:text-white transition">About</a>
+                    <a href="/lost-pet.html" class="text-gray-300 hover:text-white transition">Lost Pets</a>
+                    <a href="/found-pet.html" class="text-gray-300 hover:text-white transition">Found Pets</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+    <script>
+        checkSession();
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg.scope))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

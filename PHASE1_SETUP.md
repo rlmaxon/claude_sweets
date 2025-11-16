@@ -539,6 +539,94 @@ node server.js
 
 ---
 
+### Issue 2B: Database Read-Only Error (CRITICAL)
+
+**Symptom:**
+```
+SqliteError: attempt to write a readonly database
+  at /path/to/routes/auth.js:XX:XX
+  code: 'SQLITE_READONLY'
+```
+
+This error occurs when trying to register users or add pets.
+
+**Root Cause:**
+SQLite requires write permissions on:
+1. The database file itself (`findingsweetie.db`)
+2. The database directory (to create `.db-wal` and `.db-shm` temporary files)
+
+**Solution:**
+
+**Option 1: Use the fix script (RECOMMENDED)**
+```bash
+# Run the provided fix script
+./fix_database_permissions.sh
+```
+
+**Option 2: Manual fix**
+```bash
+# Navigate to project root
+cd /path/to/claude_sweets
+
+# Make database directory writable (needs 775 for SQLite)
+chmod 775 database/
+
+# Make database file writable
+chmod 664 database/findingsweetie.db
+
+# Fix any existing temporary files
+chmod 664 database/findingsweetie.db-wal 2>/dev/null || true
+chmod 664 database/findingsweetie.db-shm 2>/dev/null || true
+
+# Verify permissions
+ls -la database/
+
+# Should show:
+# drwxrwxr-x ... database/
+# -rw-rw-r-- ... findingsweetie.db
+```
+
+**For Production Deployment:**
+```bash
+# If running as www-data or another user
+sudo chown -R www-data:www-data database/
+sudo chmod 775 database/
+sudo chmod 664 database/*.db
+```
+
+**Verify Fix:**
+```bash
+# Restart server
+npm start
+
+# Test registration
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "TestPass123",
+    "zip_code": "12345"
+  }'
+
+# Should return success without SQLITE_READONLY error
+```
+
+**Prevention:**
+Add to `.gitignore`:
+```
+database/*.db-wal
+database/*.db-shm
+```
+
+Add to deployment scripts:
+```bash
+# In your deployment script
+chmod 775 database/
+chmod 664 database/*.db
+```
+
+---
+
 ### Issue 3: Module Not Found
 
 **Symptom:**

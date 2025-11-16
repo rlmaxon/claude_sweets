@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Finding Sweetie</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐾</text></svg>">
+
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center">
+    <div class="max-w-md mx-auto px-4">
+        <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+            <!-- Offline Icon -->
+            <div class="text-6xl mb-6">📡</div>
+
+            <!-- Title -->
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">
+                You're Offline
+            </h1>
+
+            <!-- Message -->
+            <p class="text-gray-600 mb-6">
+                It looks like you've lost your internet connection. Some features may not be available right now.
+            </p>
+
+            <!-- What You Can Do -->
+            <div class="bg-blue-50 rounded-lg p-6 mb-6 text-left">
+                <h2 class="text-lg font-bold text-gray-900 mb-3">
+                    What you can do:
+                </h2>
+                <ul class="space-y-2 text-gray-700">
+                    <li class="flex items-start">
+                        <span class="mr-2">✓</span>
+                        <span>View previously loaded lost and found pets</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="mr-2">✓</span>
+                        <span>Browse cached pet listings</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="mr-2">✓</span>
+                        <span>Read pet descriptions you've already viewed</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Actions -->
+            <div class="space-y-3">
+                <button
+                    onclick="checkConnection()"
+                    class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 shadow-lg hover:shadow-xl transition transform hover:scale-105"
+                >
+                    Retry Connection
+                </button>
+
+                <a
+                    href="/"
+                    class="block w-full bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold border-2 border-blue-600 hover:bg-blue-50 transition"
+                >
+                    Go to Homepage
+                </a>
+
+                <a
+                    href="/lost-pet.html"
+                    class="block w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
+                >
+                    View Cached Lost Pets
+                </a>
+            </div>
+
+            <!-- Connection Status -->
+            <div id="connection-status" class="mt-6 text-sm text-gray-500"></div>
+        </div>
+
+        <!-- Tips -->
+        <div class="mt-6 text-center text-sm text-gray-600">
+            <p>💡 Tip: Finding Sweetie works offline! You can view previously loaded pets even without internet.</p>
+        </div>
+    </div>
+
+    <script>
+        // Check connection status
+        function checkConnection() {
+            const statusEl = document.getElementById('connection-status');
+            statusEl.textContent = 'Checking connection...';
+
+            if (navigator.onLine) {
+                statusEl.textContent = '✓ Connection restored! Redirecting...';
+                statusEl.className = 'mt-6 text-sm text-green-600 font-semibold';
+
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            } else {
+                statusEl.textContent = '✗ Still offline. Please check your internet connection.';
+                statusEl.className = 'mt-6 text-sm text-red-600';
+            }
+        }
+
+        // Auto-check connection every 5 seconds
+        setInterval(() => {
+            if (navigator.onLine) {
+                const statusEl = document.getElementById('connection-status');
+                statusEl.textContent = '✓ Connection restored!';
+                statusEl.className = 'mt-6 text-sm text-green-600 font-semibold';
+            }
+        }, 5000);
+
+        // Listen for online event
+        window.addEventListener('online', () => {
+            const statusEl = document.getElementById('connection-status');
+            statusEl.textContent = '✓ Back online! Redirecting...';
+            statusEl.className = 'mt-6 text-sm text-green-600 font-semibold';
+
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
+        });
+
+        // Show initial status
+        window.addEventListener('load', () => {
+            const statusEl = document.getElementById('connection-status');
+            if (navigator.onLine) {
+                statusEl.textContent = 'Connection status: Online (but page failed to load)';
+            } else {
+                statusEl.textContent = 'Connection status: Offline';
+            }
+        });
+    </script>
+</body>
+</html>
