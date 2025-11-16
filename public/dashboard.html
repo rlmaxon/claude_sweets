@@ -236,16 +236,34 @@
                             `;
                         }
 
+                        // Determine status badge color
+                        let statusBadgeClass = 'bg-gray-100 text-gray-800';
+                        if (pet.status === 'Lost') statusBadgeClass = 'bg-red-100 text-red-800';
+                        else if (pet.status === 'Found') statusBadgeClass = 'bg-green-100 text-green-800';
+                        else if (pet.status === 'Reunited') statusBadgeClass = 'bg-blue-100 text-blue-800';
+
+                        // Show inactive badge if pet is not active
+                        const inactiveBadge = !pet.is_active ? '<span class="px-2 py-1 text-xs font-semibold rounded bg-gray-300 text-gray-600 ml-1">INACTIVE</span>' : '';
+
+                        // Determine which action button to show
+                        let actionButton = '';
+                        if (pet.is_active && (pet.status === 'Lost' || pet.status === 'Found')) {
+                            actionButton = `<button onclick="markAsReunited(${pet.id})" class="w-full mt-3 px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition">Mark as Reunited</button>`;
+                        } else if (!pet.is_active || pet.status === 'Reunited') {
+                            actionButton = `<button onclick="reactivatePet(${pet.id})" class="w-full mt-3 px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition">Reactivate Listing</button>`;
+                        }
+
                         grid.innerHTML += `
-                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 ${!pet.is_active ? 'opacity-60' : ''}">
                                 ${imageGalleryHTML}
                                 <div class="flex justify-between items-start mb-2">
                                     <h3 class="font-bold text-lg">${escapeHtml(pet.pet_name || 'Unknown')}</h3>
-                                    <span class="px-2 py-1 text-xs font-semibold rounded ${pet.status === 'Lost' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${pet.status}</span>
+                                    <div><span class="px-2 py-1 text-xs font-semibold rounded ${statusBadgeClass}">${pet.status}</span>${inactiveBadge}</div>
                                 </div>
                                 <p class="text-gray-600 text-sm mb-2">${pet.pet_type} ${pet.pet_breed ? '• ' + escapeHtml(pet.pet_breed) : ''}</p>
                                 <p class="text-gray-500 text-sm mb-3">${escapeHtml(pet.pet_description || '')}</p>
                                 <div class="text-xs text-gray-400">${formatDate(pet.created_at)}</div>
+                                ${actionButton}
                             </div>
                         `;
                     });
@@ -305,6 +323,64 @@
                 showNotification('Error registering pet', 'error');
             }
         });
+
+        async function markAsReunited(petId) {
+            if (!confirm('Mark this pet as reunited? This will remove it from public search results.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/pets/${petId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'Reunited',
+                        is_active: false
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showNotification('Pet marked as reunited! 🎉', 'success');
+                    loadDashboard();
+                } else {
+                    showNotification(data.message || 'Failed to update status', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating pet status:', error);
+                showNotification('Error updating pet status', 'error');
+            }
+        }
+
+        async function reactivatePet(petId) {
+            if (!confirm('Reactivate this pet listing? It will appear in public search results again.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/pets/${petId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'Lost', // Default to Lost when reactivating
+                        is_active: true
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showNotification('Pet listing reactivated!', 'success');
+                    loadDashboard();
+                } else {
+                    showNotification(data.message || 'Failed to update status', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating pet status:', error);
+                showNotification('Error updating pet status', 'error');
+            }
+        }
 
         function editProfile() {
             showNotification('Profile editing coming soon!', 'info');

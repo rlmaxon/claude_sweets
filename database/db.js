@@ -24,8 +24,28 @@ function initializeDatabase() {
   console.log('Database initialized successfully');
 }
 
-// Call initialization
+// Run database migrations
+function runMigrations() {
+  try {
+    // Check if is_active column exists in pets table
+    const tableInfo = db.prepare("PRAGMA table_info(pets)").all();
+    const hasIsActive = tableInfo.some(col => col.name === 'is_active');
+
+    if (!hasIsActive) {
+      console.log('Running migration: Adding is_active column to pets table');
+      db.prepare('ALTER TABLE pets ADD COLUMN is_active BOOLEAN DEFAULT 1').run();
+      // Set all existing pets to active
+      const result = db.prepare('UPDATE pets SET is_active = 1 WHERE is_active IS NULL').run();
+      console.log(`Migration complete: Added is_active column, updated ${result.changes} existing pets`);
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+}
+
+// Call initialization and migrations
 initializeDatabase();
+runMigrations();
 
 // Prepared statements for better performance and security
 const statements = {
@@ -77,6 +97,12 @@ const statements = {
     WHERE id = ? AND user_id = ?
   `),
 
+  updatePetStatus: db.prepare(`
+    UPDATE pets
+    SET status = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ? AND user_id = ?
+  `),
+
   deletePet: db.prepare(`
     DELETE FROM pets WHERE id = ? AND user_id = ?
   `),
@@ -113,12 +139,12 @@ const statements = {
     WHERE id = ?
   `),
 
-  // Search queries
+  // Search queries (only show active pets)
   searchLostPets: db.prepare(`
     SELECT p.*, u.zip_code
     FROM pets p
     JOIN users u ON p.user_id = u.id
-    WHERE p.status = 'Lost'
+    WHERE p.status = 'Lost' AND p.is_active = 1
     ORDER BY p.created_at DESC
     LIMIT ? OFFSET ?
   `),
@@ -127,7 +153,7 @@ const statements = {
     SELECT p.*, u.zip_code
     FROM pets p
     JOIN users u ON p.user_id = u.id
-    WHERE p.status = 'Found'
+    WHERE p.status = 'Found' AND p.is_active = 1
     ORDER BY p.created_at DESC
     LIMIT ? OFFSET ?
   `),
@@ -136,7 +162,7 @@ const statements = {
     SELECT p.*, u.zip_code
     FROM pets p
     JOIN users u ON p.user_id = u.id
-    WHERE p.status = ? AND p.pet_type = ?
+    WHERE p.status = ? AND p.pet_type = ? AND p.is_active = 1
     ORDER BY p.created_at DESC
     LIMIT ? OFFSET ?
   `),
@@ -145,7 +171,7 @@ const statements = {
     SELECT p.*, u.zip_code
     FROM pets p
     JOIN users u ON p.user_id = u.id
-    WHERE p.status = ? AND u.zip_code = ?
+    WHERE p.status = ? AND u.zip_code = ? AND p.is_active = 1
     ORDER BY p.created_at DESC
     LIMIT ? OFFSET ?
   `)
