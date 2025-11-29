@@ -1,9 +1,9 @@
 // Finding Sweetie Service Worker
-// Version 1.0.0
+// Version 2.0.0 - Phase 7: Push Notifications & Advanced Offline
 
-const CACHE_NAME = 'finding-sweetie-v1';
-const RUNTIME_CACHE = 'finding-sweetie-runtime-v1';
-const IMAGE_CACHE = 'finding-sweetie-images-v1';
+const CACHE_NAME = 'finding-sweetie-v2';
+const RUNTIME_CACHE = 'finding-sweetie-runtime-v2';
+const IMAGE_CACHE = 'finding-sweetie-images-v2';
 
 // Files to cache immediately on install
 const PRECACHE_URLS = [
@@ -316,5 +316,147 @@ self.addEventListener('message', (event) => {
     );
   }
 });
+
+// ============================================
+// PUSH NOTIFICATION HANDLERS (Phase 7)
+// ============================================
+
+// Push event - received when notification sent from server
+self.addEventListener('push', (event) => {
+  console.log('[SW] Push notification received');
+
+  let notificationData = {
+    title: 'Finding Sweetie',
+    body: 'You have a new notification',
+    icon: '/icons/icon-192x192.svg',
+    badge: '/icons/badge-72x72.png'
+  };
+
+  if (event.data) {
+    try {
+      notificationData = event.data.json();
+    } catch (e) {
+      notificationData.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: notificationData.body,
+    icon: notificationData.icon || '/icons/icon-192x192.svg',
+    badge: notificationData.badge || '/icons/badge-72x72.png',
+    vibrate: notificationData.vibrate || [200, 100, 200],
+    data: notificationData.data || {},
+    actions: notificationData.actions || [],
+    tag: notificationData.tag || 'default',
+    requireInteraction: notificationData.requireInteraction || false,
+    image: notificationData.image
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, options)
+  );
+});
+
+// Notification click handler
+self.addEventListener('notificationclick', (event) => {
+  console.log('[SW] Notification clicked:', event.notification.tag);
+
+  event.notification.close();
+
+  // Handle action buttons
+  if (event.action) {
+    console.log('[SW] Action clicked:', event.action);
+
+    if (event.action === 'dismiss') {
+      return;
+    }
+  }
+
+  // Get URL from notification data
+  const urlToOpen = event.notification.data?.url || '/';
+
+  // Open or focus the app
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Check if app is already open
+        for (const client of clientList) {
+          if (client.url.includes(urlToOpen) && 'focus' in client) {
+            return client.focus();
+          }
+        }
+
+        // Open new window
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
+  );
+});
+
+// Notification close handler
+self.addEventListener('notificationclose', (event) => {
+  console.log('[SW] Notification closed:', event.notification.tag);
+
+  // Track notification dismissal (optional analytics)
+  const dismissalData = {
+    tag: event.notification.tag,
+    timestamp: Date.now()
+  };
+
+  // Could send to analytics endpoint
+  // fetch('/api/analytics/notification-close', { ... });
+});
+
+// ============================================
+// BACKGROUND SYNC (Phase 7)
+// ============================================
+
+// Background sync for offline actions
+self.addEventListener('sync', (event) => {
+  console.log('[SW] Background sync:', event.tag);
+
+  if (event.tag === 'sync-pet-reports') {
+    event.waitUntil(syncPetReports());
+  }
+
+  if (event.tag === 'sync-messages') {
+    event.waitUntil(syncMessages());
+  }
+});
+
+async function syncPetReports() {
+  try {
+    // Get pending reports from IndexedDB or local storage
+    const cache = await caches.open('offline-queue');
+    const requests = await cache.keys();
+
+    for (const request of requests) {
+      try {
+        const response = await fetch(request.clone());
+        if (response.ok) {
+          await cache.delete(request);
+          console.log('[SW] Synced pet report');
+        }
+      } catch (error) {
+        console.error('[SW] Failed to sync:', error);
+      }
+    }
+
+    // Show success notification
+    self.registration.showNotification('Sync Complete', {
+      body: 'Your offline actions have been synced',
+      icon: '/icons/icon-192x192.svg',
+      tag: 'sync-complete'
+    });
+  } catch (error) {
+    console.error('[SW] Background sync failed:', error);
+  }
+}
+
+async function syncMessages() {
+  // Similar to syncPetReports but for messages
+  console.log('[SW] Syncing messages...');
+}
 
 console.log('[SW] Service Worker loaded');
