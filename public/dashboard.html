@@ -327,8 +327,8 @@
         async function loadDashboard() {
             try {
                 const [profileRes, petsRes] = await Promise.all([
-                    fetch('/api/user/profile'),
-                    fetch('/api/user/pets')
+                    fetch('/api/user/profile', { credentials: 'same-origin' }),
+                    fetch('/api/user/pets', { credentials: 'same-origin' })
                 ]);
 
                 const profile = await profileRes.json();
@@ -439,6 +439,7 @@
             try {
                 const response = await fetch('/api/pets/register', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
                 });
@@ -466,6 +467,7 @@
             try {
                 const response = await fetch(`/api/pets/${petId}/status`, {
                     method: 'PATCH',
+                    credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         status: 'Reunited',
@@ -495,6 +497,7 @@
             try {
                 const response = await fetch(`/api/pets/${petId}/status`, {
                     method: 'PATCH',
+                    credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         status: 'Lost', // Default to Lost when reactivating
@@ -525,7 +528,9 @@
 
         async function editPet(petId) {
             try {
-                const response = await fetch(`/api/pets/${petId}`);
+                const response = await fetch(`/api/pets/${petId}`, {
+                    credentials: 'same-origin'
+                });
                 const data = await response.json();
 
                 if (response.ok) {
@@ -579,7 +584,8 @@
 
             try {
                 const response = await fetch(`/api/pets/${petId}/images/${imageId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    credentials: 'same-origin'
                 });
 
                 const data = await response.json();
@@ -588,7 +594,9 @@
                     showNotification('Image deleted successfully', 'success');
 
                     // Refresh the pet data and update the image display
-                    const petResponse = await fetch(`/api/pets/${petId}`);
+                    const petResponse = await fetch(`/api/pets/${petId}`, {
+                        credentials: 'same-origin'
+                    });
                     const petData = await petResponse.json();
                     if (petResponse.ok) {
                         currentPetData = petData.pet;
@@ -624,7 +632,7 @@
             formData.append('pet_description', document.getElementById('edit-pet-description').value);
             formData.append('last_seen_location', document.getElementById('edit-pet-location').value);
             formData.append('additional_comments', document.getElementById('edit-pet-comments').value);
-            formData.append('flag_chip', document.getElementById('edit-pet-chip').checked);
+            formData.append('flag_chip', document.getElementById('edit-pet-chip').checked ? 'true' : 'false');
 
             // Add new images if any
             const fileInput = document.getElementById('edit-pet-images');
@@ -646,6 +654,7 @@
             try {
                 const response = await fetch(`/api/pets/${petId}`, {
                     method: 'PUT',
+                    credentials: 'same-origin',
                     body: formData
                 });
 

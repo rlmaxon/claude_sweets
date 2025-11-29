@@ -81,8 +81,8 @@ const validateLogin = [
 const validatePet = [
   body('status')
     .trim()
-    .isIn(['Lost', 'Found'])
-    .withMessage('Status must be either "Lost" or "Found"'),
+    .isIn(['Lost', 'Found', 'Reunited'])
+    .withMessage('Status must be Lost, Found, or Reunited'),
 
   body('pet_type')
     .trim()
