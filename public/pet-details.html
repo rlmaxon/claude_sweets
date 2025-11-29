@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Details - Finding Sweetie</title>
+    <script src="https://cdn.tailwindcss.com?suppress-warnings=true"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐾</text></svg>">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#3b82f6">
+
+    <!-- iOS Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="FindingSweetie">
+
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.svg">
+
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%); }
+
+        /* Image Gallery Styles */
+        .main-image-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: #f3f4f6;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .main-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #1f2937;
+        }
+        .thumbnail-gallery {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 8px 0;
+            margin-top: 12px;
+        }
+        .thumbnail-gallery::-webkit-scrollbar {
+            height: 6px;
+        }
+        .thumbnail-gallery::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .thumbnail {
+            flex-shrink: 0;
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .thumbnail:hover {
+            transform: scale(1.05);
+        }
+        .thumbnail.active {
+            border-color: #3b82f6;
+        }
+        .gallery-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 24px;
+            transition: background 0.2s ease;
+            z-index: 10;
+        }
+        .gallery-nav:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+        .gallery-nav.left {
+            left: 16px;
+        }
+        .gallery-nav.right {
+            right: 16px;
+        }
+        .image-counter {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Nav -->
+    <nav class="bg-white/80 backdrop-blur-md shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition">
+                        <span class="text-3xl">🐾</span>
+                        <span class="text-xl font-bold">Finding Sweetie</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition">Home</a>
+                    <a href="/lost-pet.html" class="text-gray-700 hover:text-blue-600 font-medium transition">Lost Pets</a>
+                    <a href="/found-pet.html" class="text-gray-700 hover:text-blue-600 font-medium transition">Found Pets</a>
+                    <a href="/about.html" class="text-gray-700 hover:text-blue-600 font-medium transition">About</a>
+                    <div id="nav-auth"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Loading State -->
+    <div id="loading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p class="text-gray-600 mt-4">Loading pet details...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="error" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center hidden">
+        <div class="text-6xl mb-4">😢</div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Pet Not Found</h2>
+        <p class="text-gray-600 mb-6">This pet may have been removed or doesn't exist.</p>
+        <div class="space-x-4">
+            <a href="/lost-pet.html" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">View Lost Pets</a>
+            <a href="/found-pet.html" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">View Found Pets</a>
+        </div>
+    </div>
+
+    <!-- Pet Details -->
+    <section id="pet-details" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Image Gallery -->
+            <div>
+                <div class="main-image-container" id="main-image-container">
+                    <!-- Images will be inserted here -->
+                </div>
+                <div class="thumbnail-gallery" id="thumbnail-gallery">
+                    <!-- Thumbnails will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Pet Information -->
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <!-- Status Badge -->
+                <div class="mb-4">
+                    <span id="status-badge" class="px-4 py-2 text-sm font-bold rounded-full"></span>
+                </div>
+
+                <!-- Pet Name -->
+                <h1 id="pet-name" class="text-4xl font-bold text-gray-900 mb-2"></h1>
+
+                <!-- Pet Type & Breed -->
+                <p id="pet-type-breed" class="text-xl text-gray-600 mb-6"></p>
+
+                <!-- Description -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Description</h3>
+                    <p id="pet-description" class="text-gray-700"></p>
+                </div>
+
+                <!-- Details Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <p class="text-sm text-gray-500">Microchipped</p>
+                        <p id="pet-chip" class="font-semibold text-gray-900"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Reported</p>
+                        <p id="pet-date" class="font-semibold text-gray-900"></p>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="mb-6" id="location-container">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">📍 Last Seen Location</h3>
+                    <p id="pet-location" class="text-gray-700"></p>
+                </div>
+
+                <!-- Additional Comments -->
+                <div class="mb-6" id="comments-container">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Additional Information</h3>
+                    <p id="pet-comments" class="text-gray-700"></p>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Contact Owner</h3>
+                    <div id="contact-buttons" class="space-y-3">
+                        <!-- Contact buttons will be inserted here -->
+                    </div>
+                    <p class="text-sm text-gray-500 mt-4">Please be respectful when contacting the owner.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="mt-8 text-center">
+            <button onclick="history.back()" class="text-blue-600 hover:text-blue-700 font-semibold">
+                ← Back to Search Results
+            </button>
+        </div>
+    </section>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <p class="text-gray-300 text-center">© 2025 Finding Sweetie. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+    <script>
+        checkSession();
+
+        let currentImageIndex = 0;
+        let petImages = [];
+
+        // Get pet ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const petId = urlParams.get('id');
+
+        if (!petId) {
+            showError();
+        } else {
+            loadPetDetails(petId);
+        }
+
+        async function loadPetDetails(id) {
+            try {
+                const response = await fetch(`/api/pets/${id}`, {
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Pet not found');
+                }
+
+                const data = await response.json();
+                displayPetDetails(data.pet);
+
+            } catch (error) {
+                console.error('Error loading pet details:', error);
+                showError();
+            }
+        }
+
+        function displayPetDetails(pet) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('pet-details').classList.remove('hidden');
+
+            // Update page title
+            document.title = `${pet.pet_name || 'Pet'} - Finding Sweetie`;
+
+            // Status Badge
+            const statusBadge = document.getElementById('status-badge');
+            if (pet.status === 'Lost') {
+                statusBadge.className = 'px-4 py-2 text-sm font-bold rounded-full bg-red-100 text-red-800';
+                statusBadge.textContent = '❌ LOST PET';
+            } else if (pet.status === 'Found') {
+                statusBadge.className = 'px-4 py-2 text-sm font-bold rounded-full bg-green-100 text-green-800';
+                statusBadge.textContent = '✅ FOUND PET';
+            } else if (pet.status === 'Reunited') {
+                statusBadge.className = 'px-4 py-2 text-sm font-bold rounded-full bg-blue-100 text-blue-800';
+                statusBadge.textContent = '🎉 REUNITED';
+            }
+
+            // Pet Name
+            document.getElementById('pet-name').textContent = pet.pet_name || 'Unknown Name';
+
+            // Pet Type & Breed
+            const typeBreed = pet.pet_breed
+                ? `${pet.pet_type} • ${pet.pet_breed}`
+                : pet.pet_type;
+            document.getElementById('pet-type-breed').textContent = typeBreed;
+
+            // Description
+            document.getElementById('pet-description').textContent = pet.pet_description || 'No description provided';
+
+            // Microchip
+            document.getElementById('pet-chip').textContent = pet.flag_chip ? 'Yes' : 'No';
+
+            // Date
+            document.getElementById('pet-date').textContent = formatDate(pet.created_at);
+
+            // Location
+            if (pet.last_seen_location) {
+                document.getElementById('pet-location').textContent = pet.last_seen_location;
+            } else if (pet.contact && pet.contact.zip_code) {
+                document.getElementById('pet-location').textContent = `Zip Code: ${pet.contact.zip_code}`;
+            } else {
+                document.getElementById('location-container').classList.add('hidden');
+            }
+
+            // Additional Comments
+            if (pet.additional_comments) {
+                document.getElementById('pet-comments').textContent = pet.additional_comments;
+            } else {
+                document.getElementById('comments-container').classList.add('hidden');
+            }
+
+            // Images
+            displayImages(pet.images || []);
+
+            // Contact Information
+            displayContactButtons(pet.contact);
+        }
+
+        function displayImages(images) {
+            petImages = images;
+            const mainContainer = document.getElementById('main-image-container');
+            const thumbnailGallery = document.getElementById('thumbnail-gallery');
+
+            if (images.length === 0) {
+                mainContainer.innerHTML = `
+                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
+                        <span class="text-8xl">🐾</span>
+                    </div>
+                `;
+                thumbnailGallery.classList.add('hidden');
+                return;
+            }
+
+            // Display first image
+            showMainImage(0);
+
+            // Display thumbnails if more than one image
+            if (images.length > 1) {
+                thumbnailGallery.innerHTML = images.map((img, idx) => `
+                    <img src="${escapeHtml(img.image_url)}"
+                         class="thumbnail ${idx === 0 ? 'active' : ''}"
+                         alt="Thumbnail ${idx + 1}"
+                         onclick="showMainImage(${idx})">
+                `).join('');
+            } else {
+                thumbnailGallery.classList.add('hidden');
+            }
+        }
+
+        function showMainImage(index) {
+            if (petImages.length === 0) return;
+
+            currentImageIndex = index;
+            const mainContainer = document.getElementById('main-image-container');
+            const image = petImages[index];
+
+            const navButtons = petImages.length > 1 ? `
+                <div class="gallery-nav left" onclick="navigateImage(-1)">‹</div>
+                <div class="gallery-nav right" onclick="navigateImage(1)">›</div>
+                <div class="image-counter">${index + 1} / ${petImages.length}</div>
+            ` : '';
+
+            mainContainer.innerHTML = `
+                <img src="${escapeHtml(image.image_url)}"
+                     class="main-image"
+                     alt="Pet image">
+                ${navButtons}
+            `;
+
+            // Update thumbnails
+            document.querySelectorAll('.thumbnail').forEach((thumb, idx) => {
+                thumb.classList.toggle('active', idx === index);
+            });
+        }
+
+        function navigateImage(direction) {
+            let newIndex = currentImageIndex + direction;
+            if (newIndex < 0) newIndex = petImages.length - 1;
+            if (newIndex >= petImages.length) newIndex = 0;
+            showMainImage(newIndex);
+        }
+
+        function displayContactButtons(contact) {
+            const container = document.getElementById('contact-buttons');
+
+            if (!contact) {
+                container.innerHTML = '<p class="text-gray-600">Contact information not available</p>';
+                return;
+            }
+
+            let buttons = [];
+
+            // Email button
+            if (contact.email) {
+                buttons.push(`
+                    <a href="mailto:${escapeHtml(contact.email)}?subject=About your pet on Finding Sweetie"
+                       class="block w-full bg-blue-600 text-white text-center px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+                        📧 Send Email
+                    </a>
+                `);
+            }
+
+            // SMS button
+            if (contact.mobile) {
+                buttons.push(`
+                    <a href="sms:${escapeHtml(contact.mobile)}"
+                       class="block w-full bg-green-600 text-white text-center px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition">
+                        💬 Send SMS
+                    </a>
+                `);
+            }
+
+            // Zip code info (always shown if available)
+            if (contact.zip_code) {
+                buttons.push(`
+                    <div class="text-sm text-gray-600 text-center">
+                        📍 General Area: ${escapeHtml(contact.zip_code)}
+                    </div>
+                `);
+            }
+
+            if (buttons.length === 0) {
+                container.innerHTML = '<p class="text-gray-600">Contact information not available. The owner has not enabled contact options.</p>';
+            } else {
+                container.innerHTML = buttons.join('');
+            }
+        }
+
+        function showError() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error').classList.remove('hidden');
+        }
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg.scope))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
