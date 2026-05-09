@@ -1,0 +1,10 @@
+.git
+node_modules
+database/findingsweetie.db
+uploads
+.env
+*.sh
+PHASE*.md
+UBUNTU_SETUP.md
+DEPENDENCIES_VERIFICATION.md
+DATABASE_INFO.md
