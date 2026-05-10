@@ -1,7 +1,6 @@
 const webpush = require('web-push');
-const { statements } = require('../../database/db');
+const { query } = require('../../database/db');
 
-// Configure web-push with VAPID keys
 webpush.setVapidDetails(
   process.env.VAPID_SUBJECT || 'mailto:admin@findingsweetie.app',
   process.env.VAPID_PUBLIC_KEY,
@@ -9,27 +8,18 @@ webpush.setVapidDetails(
 );
 
 class PushService {
-  /**
-   * Subscribe user to push notifications
-   */
   async subscribe(userId, subscription) {
     try {
       const { endpoint, keys } = subscription;
-
-      // Save subscription to database
-      const result = statements.createPushSubscription.run(
-        userId,
-        endpoint,
-        keys.p256dh,
-        keys.auth,
-        subscription.userAgent || null
+      const result = await query(
+        `INSERT INTO push_subscriptions (user_id, endpoint, keys_p256dh, keys_auth, user_agent)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [userId, endpoint, keys.p256dh, keys.auth, subscription.userAgent || null]
       );
-
       console.log(`Push subscription created for user ${userId}`);
-      return { success: true, id: result.lastInsertRowid };
+      return { success: true, id: result.rows[0].id };
     } catch (error) {
-      // Handle duplicate endpoint (user already subscribed)
-      if (error.code === 'SQLITE_CONSTRAINT') {
+      if (error.code === '23505') {
         console.log(`User ${userId} already subscribed to push`);
         return { success: true, message: 'Already subscribed' };
       }
@@ -37,21 +27,22 @@ class PushService {
     }
   }
 
-  /**
-   * Unsubscribe user from push notifications
-   */
   async unsubscribe(userId, endpoint) {
-    statements.deletePushSubscription.run(endpoint, userId);
+    await query(
+      'DELETE FROM push_subscriptions WHERE endpoint = $1 AND user_id = $2',
+      [endpoint, userId]
+    );
     console.log(`Push subscription removed for user ${userId}`);
     return { success: true };
   }
 
-  /**
-   * Send push notification to specific user
-   */
   async sendToUser(userId, payload) {
     try {
-      const subscriptions = statements.getPushSubscriptionsByUser.all(userId);
+      const result = await query(
+        'SELECT * FROM push_subscriptions WHERE user_id = $1',
+        [userId]
+      );
+      const subscriptions = result.rows;
 
       if (subscriptions.length === 0) {
         console.log(`No push subscriptions found for user ${userId}`);
@@ -66,21 +57,13 @@ class PushService {
       const failed = results.filter(r => r.status === 'rejected').length;
 
       console.log(`Sent push to user ${userId}: ${successful} sent, ${failed} failed`);
-
-      return {
-        success: true,
-        sent: successful,
-        failed: failed
-      };
+      return { success: true, sent: successful, failed };
     } catch (error) {
       console.error('Error sending push to user:', error);
       throw error;
     }
   }
 
-  /**
-   * Send push notification to specific subscription
-   */
   async sendNotification(subscription, payload) {
     const pushSubscription = {
       endpoint: subscription.endpoint,
@@ -92,28 +75,20 @@ class PushService {
 
     try {
       await webpush.sendNotification(pushSubscription, JSON.stringify(payload));
-
-      // Update last_used timestamp
-      statements.updatePushSubscriptionLastUsed.run(
-        new Date().toISOString(),
-        subscription.id
+      await query(
+        'UPDATE push_subscriptions SET last_used = CURRENT_TIMESTAMP WHERE id = $1',
+        [subscription.id]
       );
-
       return { success: true };
     } catch (error) {
-      // Handle subscription errors
       if (error.statusCode === 410 || error.statusCode === 404) {
-        // Subscription expired or invalid - remove it
         console.log(`Removing expired subscription: ${subscription.endpoint}`);
-        statements.deletePushSubscriptionById.run(subscription.id);
+        await query('DELETE FROM push_subscriptions WHERE id = $1', [subscription.id]);
       }
       throw error;
     }
   }
 
-  /**
-   * Send pet match alert notification
-   */
   async sendMatchAlert(userId, matchedPet) {
     const payload = {
       title: '🐾 Pet Match Found!',
@@ -121,32 +96,17 @@ class PushService {
       icon: matchedPet.image_url || '/icons/icon-192x192.svg',
       badge: '/icons/badge-72x72.png',
       tag: `match-${matchedPet.id}`,
-      data: {
-        type: 'match',
-        petId: matchedPet.id,
-        url: `/pet/${matchedPet.id}`
-      },
+      data: { type: 'match', petId: matchedPet.id, url: `/pet/${matchedPet.id}` },
       actions: [
-        {
-          action: 'view',
-          title: 'View Pet',
-          icon: '/icons/view-icon.png'
-        },
-        {
-          action: 'dismiss',
-          title: 'Dismiss'
-        }
+        { action: 'view', title: 'View Pet', icon: '/icons/view-icon.png' },
+        { action: 'dismiss', title: 'Dismiss' }
       ],
       requireInteraction: true,
       vibrate: [200, 100, 200]
     };
-
-    return await this.sendToUser(userId, payload);
+    return this.sendToUser(userId, payload);
   }
 
-  /**
-   * Send new message notification
-   */
   async sendMessageNotification(userId, message) {
     const payload = {
       title: '💬 New Message',
@@ -154,30 +114,15 @@ class PushService {
       icon: '/icons/icon-192x192.svg',
       badge: '/icons/badge-72x72.png',
       tag: `message-${message.conversationId}`,
-      data: {
-        type: 'message',
-        conversationId: message.conversationId,
-        url: `/chat/${message.conversationId}`
-      },
+      data: { type: 'message', conversationId: message.conversationId, url: `/chat/${message.conversationId}` },
       actions: [
-        {
-          action: 'reply',
-          title: 'Reply',
-          icon: '/icons/reply-icon.png'
-        },
-        {
-          action: 'view',
-          title: 'View'
-        }
+        { action: 'reply', title: 'Reply', icon: '/icons/reply-icon.png' },
+        { action: 'view', title: 'View' }
       ]
     };
-
-    return await this.sendToUser(userId, payload);
+    return this.sendToUser(userId, payload);
   }
 
-  /**
-   * Send general notification
-   */
   async sendNotificationToUser(userId, title, body, data = {}) {
     const payload = {
       title,
@@ -186,16 +131,13 @@ class PushService {
       badge: '/icons/badge-72x72.png',
       data
     };
-
-    return await this.sendToUser(userId, payload);
+    return this.sendToUser(userId, payload);
   }
 
-  /**
-   * Broadcast to all subscribed users
-   */
   async broadcast(payload) {
     try {
-      const allSubscriptions = statements.getAllPushSubscriptions.all();
+      const result = await query('SELECT * FROM push_subscriptions');
+      const allSubscriptions = result.rows;
 
       console.log(`Broadcasting to ${allSubscriptions.length} subscriptions`);
 
@@ -206,31 +148,19 @@ class PushService {
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
 
-      return {
-        success: true,
-        sent: successful,
-        failed: failed,
-        total: allSubscriptions.length
-      };
+      return { success: true, sent: successful, failed, total: allSubscriptions.length };
     } catch (error) {
       console.error('Broadcast error:', error);
       throw error;
     }
   }
 
-  /**
-   * Clean up expired subscriptions
-   */
   async cleanupExpiredSubscriptions(daysOld = 90) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
-
-    const result = statements.deleteExpiredPushSubscriptions.run(
-      cutoffDate.toISOString()
+    const result = await query(
+      `DELETE FROM push_subscriptions WHERE last_used < NOW() - INTERVAL '${daysOld} days'`
     );
-
-    console.log(`Removed ${result.changes} expired push subscriptions`);
-    return { removed: result.changes };
+    console.log(`Removed ${result.rowCount} expired push subscriptions`);
+    return { removed: result.rowCount };
   }
 }
 
