@@ -3,7 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
-const { db } = require('./database/db');
+const { pool, initializeDatabase } = require('./database/db');
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -98,22 +98,30 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, HOST, () => {
-  console.log(`🐾 Finding Sweetie server running on http://${HOST}:${PORT}`);
-  console.log(`   Access locally: http://localhost:${PORT}`);
-  console.log(`   Access on network: http://192.168.68.x:${PORT}`);
-  console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+const startServer = async () => {
+  try {
+    await pool.query('SELECT NOW()');
+    console.log('Database connection established');
+    await initializeDatabase();
+    app.listen(PORT, HOST, () => {
+      console.log(`Finding Sweetie server running on http://${HOST}:${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, closing server...');
-  db.close();
-  process.exit(0);
+  pool.end().then(() => process.exit(0));
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, closing server...');
-  db.close();
-  process.exit(0);
+  pool.end().then(() => process.exit(0));
 });
