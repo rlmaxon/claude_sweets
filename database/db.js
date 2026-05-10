@@ -7,7 +7,7 @@ const dbPath = path.join(__dirname, 'findingsweetie.db');
 
 // Initialize database
 const db = new Database(dbPath, {
-  verbose: console.log // Log SQL queries in development
+  verbose: process.env.NODE_ENV !== 'production' ? console.log : null
 });
 
 // Enable foreign keys
