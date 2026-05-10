@@ -1,0 +1,41 @@
+name: Deploy to Elastic Beanstalk
+
+on:
+  push:
+    branches:
+      - main
+      - claude/add-start-script-g6nUQ
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate deployment package
+        run: |
+          zip -r deploy.zip . \
+            -x "*.git*" \
+            -x "node_modules/*" \
+            -x "uploads/*" \
+            -x ".env" \
+            -x "*.sh" \
+            -x "PHASE*.md" \
+            -x "UBUNTU_SETUP.md" \
+            -x "DEPENDENCIES_VERIFICATION.md" \
+            -x "DATABASE_INFO.md" \
+            -x ".github/*"
+
+      - name: Deploy to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: claude-sweets
+          environment_name: claude-sweets-prod
+          version_label: ${{ github.sha }}
+          region: ${{ secrets.AWS_REGION }}
+          deployment_package: deploy.zip
+          wait_for_deployment: true
