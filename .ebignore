@@ -1,6 +1,5 @@
 .git
 node_modules
-database/findingsweetie.db
 uploads
 .env
 *.sh
