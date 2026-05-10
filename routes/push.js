@@ -115,7 +115,9 @@ router.post('/test', requireAuth, async (req, res) => {
 router.get('/status', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId;
-    const subscriptions = require('../database/db').statements.getPushSubscriptionsByUser.all(userId);
+    const { query } = require('../database/db');
+    const result = await query('SELECT * FROM push_subscriptions WHERE user_id = $1', [userId]);
+    const subscriptions = result.rows;
 
     res.json({
       subscribed: subscriptions.length > 0,
