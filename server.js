@@ -28,6 +28,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0'; // Bind to 0.0.0.0 for network access
 
+// Trust CloudFront/EB proxy so secure cookies work over HTTPS
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -46,7 +49,7 @@ app.use(session({
   cookie: {
     httpOnly: true, // Prevents XSS attacks
     secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-    maxAge: 300000 // 5 minutes (300 seconds as per spec)
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
 
@@ -79,7 +82,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    database: db ? 'connected' : 'disconnected'
+    database: pool ? 'connected' : 'disconnected'
   });
 });
 
