@@ -3,7 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
-const { db } = require('./database/db');
+const { pool, initializeDatabase } = require('./database/db');
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -28,6 +28,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0'; // Bind to 0.0.0.0 for network access
 
+// Trust CloudFront/EB proxy so secure cookies work over HTTPS
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -44,9 +47,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    httpOnly: true, // Prevents XSS attacks
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-    maxAge: 300000 // 5 minutes (300 seconds as per spec)
+    httpOnly: true,
+    secure: false, // CloudFront terminates SSL; session cookie travels over HTTP between CF and EB
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
 
@@ -79,7 +83,20 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    database: db ? 'connected' : 'disconnected'
+    database: pool ? 'connected' : 'disconnected'
+  });
+});
+
+// Temporary debug endpoint - remove after fixing auth
+app.get('/api/debug/session', (req, res) => {
+  res.json({
+    sessionID: req.sessionID,
+    session: req.session,
+    cookies: req.headers.cookie || 'NO COOKIES RECEIVED',
+    secure: req.secure,
+    protocol: req.protocol,
+    forwardedProto: req.headers['x-forwarded-proto'],
+    host: req.headers.host
   });
 });
 
@@ -98,22 +115,30 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, HOST, () => {
-  console.log(`🐾 Finding Sweetie server running on http://${HOST}:${PORT}`);
-  console.log(`   Access locally: http://localhost:${PORT}`);
-  console.log(`   Access on network: http://192.168.68.x:${PORT}`);
-  console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+const startServer = async () => {
+  try {
+    await pool.query('SELECT NOW()');
+    console.log('Database connection established');
+    await initializeDatabase();
+    app.listen(PORT, HOST, () => {
+      console.log(`Finding Sweetie server running on http://${HOST}:${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, closing server...');
-  db.close();
-  process.exit(0);
+  pool.end().then(() => process.exit(0));
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, closing server...');
-  db.close();
-  process.exit(0);
+  pool.end().then(() => process.exit(0));
 });

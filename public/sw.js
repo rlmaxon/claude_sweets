@@ -1,9 +1,9 @@
 // Finding Sweetie Service Worker
 // Version 2.0.0 - Phase 7: Push Notifications & Advanced Offline
 
-const CACHE_NAME = 'finding-sweetie-v2';
-const RUNTIME_CACHE = 'finding-sweetie-runtime-v2';
-const IMAGE_CACHE = 'finding-sweetie-images-v2';
+const CACHE_NAME = 'finding-sweetie-v3';
+const RUNTIME_CACHE = 'finding-sweetie-runtime-v3';
+const IMAGE_CACHE = 'finding-sweetie-images-v3';
 
 // Files to cache immediately on install
 const PRECACHE_URLS = [
@@ -87,10 +87,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Different strategies for different resources
+  // Never intercept API requests - let browser handle them directly
+  // so auth cookies and session state are always fresh
   if (url.pathname.startsWith('/api/')) {
-    // API requests: Network first, fallback to cache
-    event.respondWith(networkFirst(request));
+    return;
   } else if (url.pathname.startsWith('/uploads/') || url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) {
     // Images: Cache first with background update
     event.respondWith(cacheFirstWithRefresh(request));
