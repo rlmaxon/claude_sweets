@@ -91,7 +91,7 @@ self.addEventListener('fetch', (event) => {
   // so auth cookies and session state are always fresh
   if (url.pathname.startsWith('/api/')) {
     return;
-  } (url.pathname.startsWith('/uploads/') || url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) {
+  } else if (url.pathname.startsWith('/uploads/') || url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) {
     // Images: Cache first with background update
     event.respondWith(cacheFirstWithRefresh(request));
   } else if (url.pathname.endsWith('.html') || url.pathname === '/') {
