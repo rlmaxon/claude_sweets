@@ -39,7 +39,7 @@ router.post('/register', requireGuest, validateRegistration, async (req, res) =>
   }
 });
 
-router.post('/login', requireGuest, validateLogin, async (req, res) => {
+router.post('/login', validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
 
