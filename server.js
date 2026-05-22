@@ -86,6 +86,19 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Temporary debug endpoint - remove after fixing auth
+app.get('/api/debug/session', (req, res) => {
+  res.json({
+    sessionID: req.sessionID,
+    session: req.session,
+    cookies: req.headers.cookie || 'NO COOKIES RECEIVED',
+    secure: req.secure,
+    protocol: req.protocol,
+    forwardedProto: req.headers['x-forwarded-proto'],
+    host: req.headers.host
+  });
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
