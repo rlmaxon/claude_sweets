@@ -47,8 +47,9 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    httpOnly: true, // Prevents XSS attacks
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true,
+    secure: false, // CloudFront terminates SSL; session cookie travels over HTTP between CF and EB
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
