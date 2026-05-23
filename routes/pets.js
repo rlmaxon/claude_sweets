@@ -209,7 +209,8 @@ router.put('/:id', requireAuth, validateId, upload.array('pet_images', 5), valid
     if (!existingPet) {
       return res.status(404).json({ error: 'Not Found', message: 'Pet not found' });
     }
-    if (existingPet.user_id !== userId) {
+    // Allow claiming pets with null user_id (created before auth was working)
+    if (existingPet.user_id !== null && existingPet.user_id !== userId) {
       return res.status(403).json({ error: 'Forbidden', message: 'You do not have permission to update this pet' });
     }
 
@@ -225,11 +226,12 @@ router.put('/:id', requireAuth, validateId, upload.array('pet_images', 5), valid
     await query(
       `UPDATE pets SET status = $1, pet_type = $2, pet_name = $3, pet_breed = $4,
        pet_description = $5, additional_comments = $6, flag_chip = $7,
-       image_url = $8, last_seen_location = $9, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $10 AND user_id = $11`,
+       image_url = $8, last_seen_location = $9, updated_at = CURRENT_TIMESTAMP,
+       user_id = $10
+       WHERE id = $11 AND (user_id = $10 OR user_id IS NULL)`,
       [status, pet_type, pet_name || null, pet_breed || null, pet_description || null,
        additional_comments || null, !!flag_chip, image_url, last_seen_location || null,
-       petId, userId]
+       userId, petId]
     );
 
     if (req.files && req.files.length > 0) {

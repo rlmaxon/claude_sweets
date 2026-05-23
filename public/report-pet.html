@@ -529,6 +529,7 @@
 
                 const response = await fetch('/api/pets/register', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     body: formData
                 });
 

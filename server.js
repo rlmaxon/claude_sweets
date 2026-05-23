@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const path = require('path');
 const fs = require('fs');
 const { pool, initializeDatabase } = require('./database/db');
@@ -41,8 +42,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve uploaded pet images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Session configuration
+// Session configuration - PostgreSQL store survives EB process restarts
 app.use(session({
+  store: new pgSession({
+    pool: pool,
+    tableName: 'session',
+    createTableIfMissing: true
+  }),
   secret: process.env.SESSION_SECRET || 'finding-sweetie-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,

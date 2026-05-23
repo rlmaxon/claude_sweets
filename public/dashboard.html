@@ -651,16 +651,23 @@
                 }
             }
 
+            let updateResponse;
             try {
-                const response = await fetch(`/api/pets/${petId}`, {
+                updateResponse = await fetch(`/api/pets/${petId}`, {
                     method: 'PUT',
                     credentials: 'same-origin',
                     body: formData
                 });
 
-                const data = await response.json();
+                const text = await updateResponse.text();
+                let data = {};
+                try {
+                    data = JSON.parse(text);
+                } catch (_) {
+                    throw new Error('non-json');
+                }
 
-                if (response.ok) {
+                if (updateResponse.ok) {
                     showNotification('Pet updated successfully!', 'success');
                     closeEditModal();
                     loadDashboard();
@@ -669,7 +676,15 @@
                 }
             } catch (error) {
                 console.error('Error updating pet:', error);
-                showNotification('Error updating pet', 'error');
+                const status = updateResponse ? updateResponse.status : 0;
+                if (status === 401) {
+                    showNotification('Session expired. Please log in again.', 'error');
+                    setTimeout(() => window.location.href = '/login.html', 1500);
+                } else if (status === 403) {
+                    showNotification('Permission error: try deleting and re-creating this listing.', 'error');
+                } else {
+                    showNotification('Error updating pet. Please try again.', 'error');
+                }
             }
         });
     </script>
