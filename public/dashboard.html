@@ -622,57 +622,45 @@
             e.preventDefault();
 
             const petId = document.getElementById('edit-pet-id').value;
-            const formData = new FormData();
-
-            // Add text fields
-            formData.append('status', document.getElementById('edit-pet-status').value);
-            formData.append('pet_type', document.getElementById('edit-pet-type').value);
-            formData.append('pet_name', document.getElementById('edit-pet-name').value);
-            formData.append('pet_breed', document.getElementById('edit-pet-breed').value);
-            formData.append('pet_description', document.getElementById('edit-pet-description').value);
-            formData.append('last_seen_location', document.getElementById('edit-pet-location').value);
-            formData.append('additional_comments', document.getElementById('edit-pet-comments').value);
-            formData.append('flag_chip', document.getElementById('edit-pet-chip').checked ? 'true' : 'false');
-
-            // Add new images if any
             const fileInput = document.getElementById('edit-pet-images');
-            if (fileInput.files.length > 0) {
-                // Check total image count
-                const currentImageCount = currentPetData.images ? currentPetData.images.length : 0;
-                const newImageCount = fileInput.files.length;
+            const hasNewImages = fileInput.files.length > 0;
 
-                if (currentImageCount + newImageCount > 5) {
+            if (hasNewImages) {
+                const currentImageCount = currentPetData.images ? currentPetData.images.length : 0;
+                if (currentImageCount + fileInput.files.length > 5) {
                     showNotification(`You can only have 5 images total. You currently have ${currentImageCount} image(s). Remove some before adding more.`, 'error');
                     return;
                 }
-
-                for (let i = 0; i < fileInput.files.length; i++) {
-                    formData.append('pet_images', fileInput.files[i]);
-                }
             }
+
+            // Step 1: Send text fields as JSON (avoids WAF multipart block on PUT)
+            const jsonData = {
+                status: document.getElementById('edit-pet-status').value,
+                pet_type: document.getElementById('edit-pet-type').value,
+                pet_name: document.getElementById('edit-pet-name').value,
+                pet_breed: document.getElementById('edit-pet-breed').value,
+                pet_description: document.getElementById('edit-pet-description').value,
+                last_seen_location: document.getElementById('edit-pet-location').value,
+                additional_comments: document.getElementById('edit-pet-comments').value,
+                flag_chip: document.getElementById('edit-pet-chip').checked
+            };
 
             let updateResponse;
             try {
                 updateResponse = await fetch(`/api/pets/${petId}`, {
                     method: 'PUT',
                     credentials: 'same-origin',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonData)
                 });
 
                 const text = await updateResponse.text();
                 let data = {};
-                try {
-                    data = JSON.parse(text);
-                } catch (_) {
-                    throw new Error('non-json');
-                }
+                try { data = JSON.parse(text); } catch (_) { throw new Error('non-json'); }
 
-                if (updateResponse.ok) {
-                    showNotification('Pet updated successfully!', 'success');
-                    closeEditModal();
-                    loadDashboard();
-                } else {
+                if (!updateResponse.ok) {
                     showNotification(data.message || 'Update failed', 'error');
+                    return;
                 }
             } catch (error) {
                 console.error('Error updating pet:', error);
@@ -685,7 +673,46 @@
                 } else {
                     showNotification('Error updating pet. Please try again.', 'error');
                 }
+                return;
             }
+
+            // Step 2: Upload new photos separately via POST (POST multipart is not WAF-blocked)
+            if (hasNewImages) {
+                const photoFormData = new FormData();
+                for (let i = 0; i < fileInput.files.length; i++) {
+                    photoFormData.append('pet_images', fileInput.files[i]);
+                }
+
+                let photoResponse;
+                try {
+                    photoResponse = await fetch(`/api/pets/${petId}/photos`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        body: photoFormData
+                    });
+
+                    const photoText = await photoResponse.text();
+                    let photoData = {};
+                    try { photoData = JSON.parse(photoText); } catch (_) {}
+
+                    if (!photoResponse.ok) {
+                        showNotification('Details saved but photo upload failed. Try uploading photos again.', 'error');
+                        closeEditModal();
+                        loadDashboard();
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error uploading photos:', error);
+                    showNotification('Details saved but photo upload failed. Try uploading photos again.', 'error');
+                    closeEditModal();
+                    loadDashboard();
+                    return;
+                }
+            }
+
+            showNotification('Pet updated successfully!', 'success');
+            closeEditModal();
+            loadDashboard();
         });
     </script>
 
