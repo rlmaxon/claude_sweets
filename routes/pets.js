@@ -195,21 +195,18 @@ router.get('/:id', validateId, async (req, res) => {
   }
 });
 
-router.put('/:id', requireAuth, validateId, upload.array('pet_images', 5), validatePet, async (req, res) => {
+router.put('/:id', requireAuth, validateId, validatePet, async (req, res) => {
   try {
     const petId = req.params.id;
     const userId = req.session.userId;
 
-    const existingResult = await query(
-      'SELECT * FROM pets WHERE id = $1',
-      [petId]
-    );
+    const existingResult = await query('SELECT * FROM pets WHERE id = $1', [petId]);
     const existingPet = existingResult.rows[0];
 
     if (!existingPet) {
       return res.status(404).json({ error: 'Not Found', message: 'Pet not found' });
     }
-    if (existingPet.user_id !== userId) {
+    if (existingPet.user_id !== null && existingPet.user_id !== userId) {
       return res.status(403).json({ error: 'Forbidden', message: 'You do not have permission to update this pet' });
     }
 
@@ -218,36 +215,62 @@ router.put('/:id', requireAuth, validateId, upload.array('pet_images', 5), valid
       additional_comments, flag_chip, last_seen_location
     } = req.body;
 
-    const image_url = req.files && req.files.length > 0
-      ? `/uploads/${req.files[0].filename}`
-      : existingPet.image_url;
-
     await query(
       `UPDATE pets SET status = $1, pet_type = $2, pet_name = $3, pet_breed = $4,
        pet_description = $5, additional_comments = $6, flag_chip = $7,
-       image_url = $8, last_seen_location = $9, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $10 AND user_id = $11`,
+       last_seen_location = $8, updated_at = CURRENT_TIMESTAMP,
+       user_id = $9
+       WHERE id = $10 AND (user_id = $9 OR user_id IS NULL)`,
       [status, pet_type, pet_name || null, pet_breed || null, pet_description || null,
-       additional_comments || null, !!flag_chip, image_url, last_seen_location || null,
-       petId, userId]
+       additional_comments || null, !!flag_chip, last_seen_location || null,
+       userId, petId]
     );
-
-    if (req.files && req.files.length > 0) {
-      const existingImages = await query('SELECT COUNT(*) FROM pet_images WHERE pet_id = $1', [petId]);
-      const startOrder = parseInt(existingImages.rows[0].count);
-      for (let i = 0; i < req.files.length; i++) {
-        const isPrimary = startOrder === 0 && i === 0;
-        await query(
-          'INSERT INTO pet_images (pet_id, image_url, is_primary, display_order) VALUES ($1, $2, $3, $4)',
-          [petId, `/uploads/${req.files[i].filename}`, isPrimary, startOrder + i]
-        );
-      }
-    }
 
     res.json({ success: true, message: 'Pet updated successfully' });
   } catch (error) {
     console.error('Update pet error:', error);
     res.status(500).json({ error: 'Server Error', message: 'Failed to update pet' });
+  }
+});
+
+router.post('/:id/photos', requireAuth, validateId, upload.array('pet_images', 5), async (req, res) => {
+  try {
+    const petId = req.params.id;
+    const userId = req.session.userId;
+
+    const existingResult = await query('SELECT * FROM pets WHERE id = $1', [petId]);
+    const existingPet = existingResult.rows[0];
+
+    if (!existingPet) {
+      return res.status(404).json({ error: 'Not Found', message: 'Pet not found' });
+    }
+    if (existingPet.user_id !== null && existingPet.user_id !== userId) {
+      return res.status(403).json({ error: 'Forbidden', message: 'You do not have permission to update this pet' });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'Bad Request', message: 'No images provided' });
+    }
+
+    const existingImages = await query('SELECT COUNT(*) FROM pet_images WHERE pet_id = $1', [petId]);
+    const startOrder = parseInt(existingImages.rows[0].count);
+    const firstImageUrl = `/uploads/${req.files[0].filename}`;
+
+    if (startOrder === 0) {
+      await query('UPDATE pets SET image_url = $1 WHERE id = $2', [firstImageUrl, petId]);
+    }
+
+    for (let i = 0; i < req.files.length; i++) {
+      await query(
+        'INSERT INTO pet_images (pet_id, image_url, is_primary, display_order) VALUES ($1, $2, $3, $4)',
+        [petId, `/uploads/${req.files[i].filename}`, startOrder === 0 && i === 0, startOrder + i]
+      );
+    }
+
+    res.json({ success: true, message: 'Photos uploaded successfully', image_count: req.files.length });
+  } catch (error) {
+    console.error('Upload photos error:', error);
+    res.status(500).json({ error: 'Server Error', message: 'Failed to upload photos' });
   }
 });
 
